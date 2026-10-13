@@ -961,6 +961,7 @@
     const CSWEB_CDN = "https://cdn.jsdelivr.net/gh/daniil-athyx/csweb@main/";
     const XASH_CDN = "https://cdn.jsdelivr.net/npm/xash3d-fwgs@1.2.2/dist";
     const CS16_CDN = "https://cdn.jsdelivr.net/npm/cs16-client@latest/dist/cstrike";
+    const AIMFLARE_CDN = "https://aimflare.com.br/cs16-game/";
     const TOTAL_PARTS = 17;
     const ZIP_CACHE = "cs16-web-valve-cache-v1";
 
@@ -1169,6 +1170,9 @@
         "sv_restartround 0",
         "pausable 0",
         "_vgui_menus 0",
+        "cl_himodels 1",
+        "cl_minmodels 0",
+        "r_drawviewmodel 1",
         "maxplayers 12",
         "bot_quota 0",
         "bot_difficulty " + selectedDiff,
@@ -1215,23 +1219,57 @@
     }
 
     /* ==========================================================================
-       SİLAH & KİT VERME
+       SİLAH & KİT VERME (VALORANT MEKANİĞİ)
        ========================================================================== */
+    function applyWeaponSlotBinds() {
+      const primary = selectedKit === "awp" ? "weapon_awp" : (selectedKit === "m4" ? "weapon_m4a1" : "weapon_ak47");
+      execCmd(`bind "1" "cancelselect;use ${primary};slot1"`);
+      execCmd(`bind "2" "cancelselect;use weapon_usp;slot2"`);
+      execCmd(`bind "3" "cancelselect;use weapon_knife;slot3"`);
+      execCmd(`bind "4" "cancelselect;use weapon_hegrenade"`);
+      execCmd(`bind "b" ""`);
+      execCmd(`bind "B" ""`);
+    }
+
     function giveKitLoadout(kit) {
       selectedKit = kit;
-      if (kit === "ak") {
-        execCmd("give weapon_ak47");
-        execCmd("use weapon_ak47");
-      } else if (kit === "m4") {
-        execCmd("give weapon_m4a1");
-        execCmd("use weapon_m4a1");
-      } else if (kit === "awp") {
-        execCmd("give weapon_awp");
-        execCmd("use weapon_awp");
-      }
+      const primary = kit === "awp" ? "weapon_awp" : (kit === "m4" ? "weapon_m4a1" : "weapon_ak47");
+
+      execCmd("sv_cheats 1");
+      execCmd("mp_consistency 0");
+      execCmd("cl_himodels 1");
+      execCmd("cl_minmodels 0");
+      execCmd("r_drawviewmodel 1");
+      execCmd("cancelselect");
+
+      // 1) Spawn ile gelen eski tabancayı temizle (model çakışmasını önler)
+      execCmd("use weapon_usp");
+      execCmd("drop");
+      execCmd("use weapon_glock18");
+      execCmd("drop");
+
+      // 2) Valorant Kitini ver
+      execCmd("give " + primary);
       execCmd("give weapon_usp");
       execCmd("give weapon_knife");
       execCmd("give item_assaultsuit");
+
+      for (let i = 0; i < 3; i++) {
+        execCmd("give ammo_762nato");
+        execCmd("give ammo_556nato");
+        execCmd("give ammo_338magnum");
+        execCmd("give ammo_45acp");
+      }
+
+      // 3) Ana silahı ele al
+      setTimeout(() => {
+        execCmd("cancelselect");
+        execCmd("use " + primary);
+        execCmd("slot1");
+      }, 150);
+
+      applyWeaponSlotBinds();
+
       hudState.clip = kit === "awp" ? 10 : 30;
       hudState.reserve = 90;
       updateHud();
@@ -1284,6 +1322,26 @@
       if (msg) loadingStatus.textContent = msg;
     }
 
+    async function fetchWithFallback(localUrl, cdnUrl) {
+      try {
+        const res = await fetch(localUrl, { cache: "force-cache" });
+        if (res.ok) {
+          const buf = await res.arrayBuffer();
+          if (buf.byteLength > 1000) return new Uint8Array(buf);
+        }
+      } catch (e) {}
+      if (cdnUrl) {
+        try {
+          const res2 = await fetch(cdnUrl, { cache: "force-cache" });
+          if (res2.ok) {
+            const buf2 = await res2.arrayBuffer();
+            if (buf2.byteLength > 1000) return new Uint8Array(buf2);
+          }
+        } catch (e) {}
+      }
+      return null;
+    }
+
     lockInBtn.addEventListener("click", () => {
       playerName = document.getElementById("player-nick").value.trim() || "Radiant";
       document.getElementById("main-menu").classList.add("hidden");
@@ -1333,52 +1391,60 @@
         setLoadProgress(75, "Valorant kaplamaları ve Ascent haritası yükleniyor...");
         let bspData = null;
         let navData = null;
-        try {
-          const overlayRes = await fetch("cs16-game/valorant-overlay.zip", { cache: "force-cache" });
-          if (overlayRes.ok) {
-            const overlayBuf = await overlayRes.arrayBuffer();
-            const overlayZip = await JSZip.loadAsync(overlayBuf);
-            const ovEntries = Object.keys(overlayZip.files).filter(p => !overlayZip.files[p].dir);
 
-            for (const path of ovEntries) {
-              const rel = path.replace(/^cstrike\//, "");
-              const u8 = await overlayZip.files[path].async("uint8array");
-              const fullRodir = "/rodir/cstrike/" + rel;
-              const fullRwdir = "/rwdir/cstrike/" + rel;
+        const overlayData = await fetchWithFallback("cs16-game/valorant-overlay.zip", `${AIMFLARE_CDN}valorant-overlay.zip`);
+        if (overlayData) {
+          const overlayZip = await JSZip.loadAsync(overlayData.buffer);
+          const ovEntries = Object.keys(overlayZip.files).filter(p => !overlayZip.files[p].dir);
 
-              files[fullRodir] = u8;
-              files[fullRwdir] = new Uint8Array(u8);
+          for (const path of ovEntries) {
+            const rel = path.replace(/^cstrike\//, "");
+            const u8 = await overlayZip.files[path].async("uint8array");
+            const fullRodir = "/rodir/cstrike/" + rel;
+            const fullRwdir = "/rwdir/cstrike/" + rel;
 
-              // Modelleri ve haritayı sakla
-              if (rel.endsWith(".mdl")) {
-                cachedModels[fullRodir] = u8;
-              }
-              if (rel.endsWith("de_ascent_v1.bsp")) {
-                bspData = u8;
-              }
-              if (rel.endsWith("de_ascent_v1.nav")) {
-                navData = u8;
-              }
-            }
+            files[fullRodir] = u8;
+            files[fullRwdir] = new Uint8Array(u8);
+
+            if (rel.endsWith(".mdl")) cachedModels[fullRodir] = u8;
+            if (rel.endsWith("de_ascent_v1.bsp")) bspData = u8;
+            if (rel.endsWith("de_ascent_v1.nav")) navData = u8;
           }
-        } catch (e) {
-          console.warn("Valorant overlay:", e);
         }
 
-        // Özel Jett Bıçağı varsa enjekte et
-        if (selectedAgent === "jett") {
-          try {
-            const jettKnifeRes = await fetch("cs16-game/hands/jett/v_knife.mdl");
-            if (jettKnifeRes.ok) {
-              const jkBuf = new Uint8Array(await jettKnifeRes.arrayBuffer());
-              files["/rodir/cstrike/models/v_knife.mdl"] = jkBuf;
-              files["/rwdir/cstrike/models/v_knife.mdl"] = new Uint8Array(jkBuf);
-              cachedModels["/rodir/cstrike/models/v_knife.mdl"] = jkBuf;
-            }
-          } catch (e) {}
+        // 3. Vandal, Ghost & Bıçak Modellerini (Jett / Fade elleri) doğrudan yükle
+        setLoadProgress(82, "Ajan silah kaplamaları entegre ediliyor...");
+        const agentFolder = (selectedAgent === "jett") ? "jett" : "fade";
+
+        const [vandalU8, ghostU8, knifeU8] = await Promise.all([
+          fetchWithFallback(`cs16-game/hands/${agentFolder}/v_ak47.mdl`, `${AIMFLARE_CDN}hands/${agentFolder}/v_ak47.mdl`),
+          fetchWithFallback(`cs16-game/hands/${agentFolder}/v_usp.mdl`, `${AIMFLARE_CDN}hands/${agentFolder}/v_usp.mdl`),
+          fetchWithFallback(`cs16-game/hands/${agentFolder}/v_knife.mdl`, `${AIMFLARE_CDN}hands/${agentFolder}/v_knife.mdl`)
+        ]);
+
+        if (vandalU8) {
+          files["/rodir/cstrike/models/v_ak47.mdl"] = vandalU8;
+          files["/rwdir/cstrike/models/v_ak47.mdl"] = new Uint8Array(vandalU8);
+          cachedModels["/rodir/cstrike/models/v_ak47.mdl"] = vandalU8;
+        }
+        if (ghostU8) {
+          files["/rodir/cstrike/models/v_usp.mdl"] = ghostU8;
+          files["/rwdir/cstrike/models/v_usp.mdl"] = new Uint8Array(ghostU8);
+          files["/rodir/cstrike/models/v_usp_fade.mdl"] = ghostU8;
+          files["/rwdir/cstrike/models/v_usp_fade.mdl"] = new Uint8Array(ghostU8);
+          cachedModels["/rodir/cstrike/models/v_usp.mdl"] = ghostU8;
+          cachedModels["/rodir/cstrike/models/v_usp_fade.mdl"] = ghostU8;
+        }
+        if (knifeU8) {
+          files["/rodir/cstrike/models/v_knife.mdl"] = knifeU8;
+          files["/rwdir/cstrike/models/v_knife.mdl"] = new Uint8Array(knifeU8);
+          files["/rodir/cstrike/models/v_knife_fade.mdl"] = knifeU8;
+          files["/rwdir/cstrike/models/v_knife_fade.mdl"] = new Uint8Array(knifeU8);
+          cachedModels["/rodir/cstrike/models/v_knife.mdl"] = knifeU8;
+          cachedModels["/rodir/cstrike/models/v_knife_fade.mdl"] = knifeU8;
         }
 
-        // Harita ve Nav dosyalarını kesin olarak /rodir/ ve /rwdir/ dizinlerine yaz
+        // Harita ve Nav dosyalarını kesin olarak iki dizine de yaz
         if (bspData) {
           files["/rodir/cstrike/maps/de_ascent_v1.bsp"] = bspData;
           files["/rwdir/cstrike/maps/de_ascent_v1.bsp"] = new Uint8Array(bspData);
@@ -1388,15 +1454,11 @@
           files["/rwdir/cstrike/maps/de_ascent_v1.nav"] = new Uint8Array(navData);
         }
 
-        // 3. Extras.pk3 Yükle
-        setLoadProgress(85, "Arayüz paketleri yükleniyor...");
-        let extrasBuf = null;
-        try {
-          const exRes = await fetch("cs16-game/extras.pk3", { cache: "force-cache" });
-          if (exRes.ok) extrasBuf = await exRes.arrayBuffer();
-        } catch (e) {}
+        // 4. Extras.pk3 Yükle
+        setLoadProgress(88, "Arayüz paketleri yükleniyor...");
+        const extrasBuf = await fetchWithFallback("cs16-game/extras.pk3", `${CS16_CDN}/extras.pk3`);
 
-        // 4. CFG & Bot Veritabanlarını Yaz
+        // 5. CFG & Bot Veritabanlarını Yaz
         const enc = new TextEncoder();
         const botDb = enc.encode(buildBotProfileDb());
         const srvCfg = enc.encode(buildServerCfg());
@@ -1411,7 +1473,7 @@
         files["/rodir/cstrike/game.cfg"] = srvCfg;
         files["/rwdir/cstrike/game.cfg"] = new Uint8Array(srvCfg);
 
-        setLoadProgress(90, "WebAssembly motoru derleniyor...");
+        setLoadProgress(92, "WebAssembly motoru derleniyor...");
         const width = window.innerWidth;
         const height = window.innerHeight;
         canvas.width = width;
@@ -1425,6 +1487,9 @@
           "-height", String(height),
           "+_vgui_menus", "0",
           "+mp_consistency", "0",
+          "+cl_himodels", "1",
+          "+cl_minmodels", "0",
+          "+r_drawviewmodel", "1",
           "+pausable", "0",
           "+maxplayers", "12",
           "+mp_freezetime", "3",
@@ -1436,7 +1501,7 @@
           "-ref", "webgl2"
         ];
 
-        // 5. Emscripten Xash3D Motoru
+        // 6. Emscripten Xash3D Motoru
         const Module = await Xash3D({
           noInitialRun: true,
           arguments: bootArgs,
@@ -1451,7 +1516,7 @@
             "/rodir/filesystem_stdio.wasm"
           ],
           onRuntimeInitialized: function () {
-            setLoadProgress(95, "Sanal dosya sistemi kuruluyor...");
+            setLoadProgress(96, "Sanal dosya sistemi kuruluyor...");
             const FS = this.FS;
 
             FS.mkdirTree("/rodir/cstrike/maps");
@@ -1517,7 +1582,6 @@
     }
 
     function initGameLifecycle() {
-      // 4. ve 7. saniyede failsafe olarak takıma katılmayı dene
       setTimeout(() => { if (!hasJoinedTeam) tryJoinAndStart(); }, 3500);
       setTimeout(() => { if (!hasJoinedTeam) tryJoinAndStart(); }, 6500);
     }
@@ -1528,6 +1592,9 @@
 
       execCmd("sv_cheats 1");
       execCmd("mp_consistency 0");
+      execCmd("cl_himodels 1");
+      execCmd("cl_minmodels 0");
+      execCmd("r_drawviewmodel 1");
       execCmd("mp_autoteambalance 0");
       execCmd("mp_limitteams 0");
       execCmd('name "' + playerName + '"');
@@ -1544,7 +1611,7 @@
         spawnMatchBots();
       }, 1500);
 
-      // Tüm botlar bağlandıktan sonra maçı temiz başlat
+      // Maçı resmi olarak başlat
       setTimeout(() => {
         execCmd("sv_restart 1");
         reinjectModels();
@@ -1574,33 +1641,23 @@
       const botCountT = selectedMode === "5v5" ? 5 : 3;
       const botCountCt = selectedMode === "5v5" ? 4 : 2;
 
-      // Terörist Botlar (5 adet)
       for (let i = 0; i < botCountT; i++) {
-        setTimeout(() => {
-          execCmd("bot_add_t");
-        }, 300 + i * 500);
+        setTimeout(() => execCmd("bot_add_t"), 300 + i * 500);
       }
-
-      // Anti-Terörist Botlar (4 adet, 5. oyuncu insan)
       for (let i = 0; i < botCountCt; i++) {
-        setTimeout(() => {
-          execCmd("bot_add_ct");
-        }, 300 + (botCountT + i) * 500);
+        setTimeout(() => execCmd("bot_add_ct"), 300 + (botCountT + i) * 500);
       }
     }
 
     function handleEngineLog(text) {
-      // 1. Sunucu hazır olduğunda katıl
       if (!isConnected && /Custom resource propagation complete|Server spawned|joined the game|is joining the/i.test(text)) {
         setTimeout(tryJoinAndStart, 300);
       }
 
-      // 2. Takım menüsü açılırsa atla
       if (/Select a team|Terrorist Force|chooseteam|Scoring will not start/i.test(text)) {
         setTimeout(skipMenusAndJoin, 60);
       }
 
-      // 3. Oyuncu CT olarak spawn oldu
       if (/joining the Counter-Terrorist|joined the CT|Counter-Terrorist force/i.test(text)) {
         hasJoinedTeam = true;
         hudState.alive = true;
@@ -1610,7 +1667,6 @@
         }, 300);
       }
 
-      // 4. Raunt başlangıcı
       if (/World triggered "Round_Start"/i.test(text)) {
         hudState.alive = true;
         setTimeout(() => {
@@ -1619,7 +1675,6 @@
         }, 400);
       }
 
-      // 5. Headshot
       if (/killed .* with .* headshot|headshot/i.test(text)) {
         flashHeadshot();
       }
@@ -1650,17 +1705,6 @@
         if (e.key === "1") { giveKitLoadout("ak"); kitPanel.classList.remove("show"); canvas.requestPointerLock?.(); }
         if (e.key === "2") { giveKitLoadout("m4"); kitPanel.classList.remove("show"); canvas.requestPointerLock?.(); }
         if (e.key === "3") { giveKitLoadout("awp"); kitPanel.classList.remove("show"); canvas.requestPointerLock?.(); }
-      }
-
-      // Oyun içi hızlı silah seçimi
-      if (!kitPanel.classList.contains("show") && !pauseMenu.classList.contains("show")) {
-        if (e.key === "1") {
-          execCmd("use " + (selectedKit === "awp" ? "weapon_awp" : selectedKit === "m4" ? "weapon_m4a1" : "weapon_ak47"));
-        } else if (e.key === "2") {
-          execCmd("use weapon_usp");
-        } else if (e.key === "3") {
-          execCmd("use weapon_knife");
-        }
       }
 
       // R Tuşu Mermi Doldurma
@@ -1704,6 +1748,7 @@
     document.getElementById("btn-restart-round").addEventListener("click", () => {
       execCmd("sv_restart 1");
       reinjectModels();
+      giveKitLoadout(selectedKit);
       pauseMenu.classList.remove("show");
       canvas.requestPointerLock?.();
     });
