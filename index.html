@@ -1922,7 +1922,7 @@
     /* ==========================================================================
        YAPILANDIRMA VE SAĞLAM CDN KAYNAKLARI
        ========================================================================== */
-    // AIMFLARE ve CSWEB Resmi CDN Kaynakları (Tüm 7 parça doğrulandı)
+    // AIMFLARE ve CSWEB Resmi CDN Kaynakları (Tüm 17 parça doğrulandı, 328 MB)
     const CSWEB_CDNS = [
       "https://cdn.jsdelivr.net/gh/daniil-athyx/csweb@main/",
       "https://fastly.jsdelivr.net/gh/daniil-athyx/csweb@main/",
@@ -1931,8 +1931,8 @@
     const CS16_CDN = "https://cdn.jsdelivr.net/npm/cs16-client@latest/dist/cstrike";
     const XASH_CDN = "https://cdn.jsdelivr.net/npm/xash3d-fwgs@1.2.2/dist";
     const AIMFLARE_CDN = "https://aimflare.com.br/cs16-game/";
-    const TOTAL_PARTS = 7;
-    const ZIP_CACHE = "aimflare-csweb-valve-v1";
+    const TOTAL_PARTS = 17;
+    const ZIP_CACHE = "valcs2_full_valve_v17";
 
     const VAL_AGENTS = [
       "Jett", "Reyna", "Phoenix", "Omen", "Sage",
@@ -2525,16 +2525,32 @@
 
         // 1. Taban CS 1.6 Paketi (Önbellekten veya Doğrulanmış CDN'lerden İndir)
         let zipBuf = await idbGet("valve.zip");
-        if (!zipBuf) {
-          setLoadProgress(10, "CS 1.6 temel oyun dosyaları indiriliyor (1/7)...");
-          const buffers = [];
+        // Eski veya bozuk yarım kalmış önbellekleri temizle (tam arşiv ~328 MB)
+        if (zipBuf && zipBuf.byteLength < 310000000) {
+          console.warn("[ValCS 2] Eski/eksik önbellek algılandı, temizlenip tüm 17 parça baştan indirilecek.");
+          zipBuf = null;
+        }
 
-          for (let i = 1; i <= TOTAL_PARTS; i++) {
-            setLoadProgress(10 + ((i - 1) / TOTAL_PARTS) * 50, `Temel oyun arşivi indiriliyor (Parça ${i}/7)...`);
-            const partBuf = await fetchPartWithRetry(i);
-            buffers.push(partBuf);
+        if (!zipBuf) {
+          setLoadProgress(10, `CS 1.6 temel oyun dosyaları indiriliyor (0/${TOTAL_PARTS})...`);
+          const buffers = new Array(TOTAL_PARTS);
+          let completed = 0;
+          const pool = Array.from({ length: TOTAL_PARTS }, (_, idx) => idx + 1);
+          const workerCount = 4; // 4 eşzamanlı hızlı indirme havuzu
+
+          async function downloadWorker() {
+            while (pool.length > 0) {
+              const partNum = pool.shift();
+              const partBuf = await fetchPartWithRetry(partNum);
+              buffers[partNum - 1] = partBuf;
+              completed++;
+              setLoadProgress(10 + Math.round((completed / TOTAL_PARTS) * 52), `Temel oyun arşivi indiriliyor (${completed}/${TOTAL_PARTS})...`);
+            }
           }
 
+          await Promise.all(Array.from({ length: workerCount }, downloadWorker));
+
+          setLoadProgress(63, "Parçalar birleştiriliyor (328 MB)...");
           const totalSize = buffers.reduce((a, b) => a + b.byteLength, 0);
           const combined = new Uint8Array(totalSize);
           let offset = 0;
@@ -2543,11 +2559,19 @@
             offset += buf.byteLength;
           }
           zipBuf = combined.buffer;
-          idbSet("valve.zip", zipBuf);
+          await idbSet("valve.zip", zipBuf);
         }
 
-        setLoadProgress(65, "Dosyalar sanal belleğe açılıyor...");
-        const baseZip = await JSZip.loadAsync(zipBuf);
+        setLoadProgress(66, "Oyun dosyaları sanal belleğe açılıyor...");
+        let baseZip;
+        try {
+          baseZip = await JSZip.loadAsync(zipBuf);
+        } catch (zipErr) {
+          console.error("[ValCS 2] Arşiv açma hatası:", zipErr);
+          await idbSet("valve.zip", null);
+          throw new Error("Oyun arşivi bozuk indi, önbellek temizlendi. Lütfen START'a tekrar tıkla.");
+        }
+
         const files = {};
         const entries = Object.keys(baseZip.files).filter(p => !baseZip.files[p].dir);
 
