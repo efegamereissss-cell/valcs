@@ -17,11 +17,11 @@
     :root {
       --val-red: #ff4655;
       --val-red-hover: #e03444;
-      --val-red-glow: rgba(255, 70, 85, 0.6);
+      --val-red-glow: rgba(255, 70, 85, 0.65);
       --val-dark: #0f1923;
-      --val-darker: #080c10;
+      --val-darker: #05080c;
       --val-card-bg: rgba(15, 25, 35, 0.94);
-      --val-border: rgba(255, 255, 255, 0.15);
+      --val-border: rgba(255, 255, 255, 0.16);
       --val-text: #ece8e1;
       --val-muted: #8b97a2;
       --val-cyan: #00f5d4;
@@ -38,8 +38,8 @@
     }
 
     body, html {
-      width: 100%;
-      height: 100%;
+      width: 100vw;
+      height: 100vh;
       overflow: hidden;
       background-color: #000;
       font-family: 'Sora', sans-serif;
@@ -62,21 +62,21 @@
       height: 100%;
       display: block;
       cursor: crosshair;
+      image-rendering: auto;
     }
 
     /* ==========================================================================
-       VALORANT BİREBİR LOBİ EKRANI (MEDIA_01EE90C1 BAZ ALINARAK)
+       TAM EKRAN VALORANT LOBİ ARAYÜZÜ (FULL HD 1080P KENARSIZ TASARIM)
        ========================================================================== */
     #val-lobby {
-      position: absolute;
+      position: fixed;
       inset: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background: #000;
+      width: 100vw;
+      height: 100vh;
       z-index: 500;
-      transition: opacity 0.4s ease, visibility 0.4s ease;
       overflow: hidden;
+      background: #05080c;
+      transition: opacity 0.35s ease, visibility 0.35s ease;
     }
 
     #val-lobby.hidden {
@@ -85,414 +85,640 @@
       pointer-events: none;
     }
 
-    /* 16:9 Ekran En-Boy Oranlı Ana Vitrin */
-    .lobby-stage {
-      position: relative;
-      width: 100vw;
-      height: 56.25vw; /* 16:9 Oran */
-      max-height: 100vh;
-      max-width: 177.78vh; /* 16:9 Oran */
-      background: #070b0e;
-      overflow: hidden;
-      box-shadow: 0 0 50px rgba(0, 0, 0, 0.9);
-    }
-
+    /* Arka Plan Görseli: 1920x1080 Full HD, Tam Ekran Kaplama */
     .lobby-backdrop-img {
       position: absolute;
       inset: 0;
       width: 100%;
       height: 100%;
       object-fit: cover;
+      object-position: center;
+      filter: brightness(0.95) contrast(1.04);
       pointer-events: none;
     }
 
-    /* İnteraktif UI Buton ve Alan Şablonu */
-    .val-hotspot {
+    /* ÜST NAVİGASYON ÇUBUĞU (TAM EKRAN BAŞLIK) */
+    .val-topbar {
       position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 64px;
+      padding: 0 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 40;
+      background: linear-gradient(180deg, rgba(6, 10, 16, 0.85) 0%, rgba(6, 10, 16, 0.2) 80%, transparent 100%);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(8px);
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .topbar-back-btn {
+      background: none;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 4px;
+      color: rgba(255, 255, 255, 0.85);
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      padding: 6px 14px;
       cursor: pointer;
-      z-index: 10;
-      transition: all 0.18s ease;
-      outline: none;
-      border: none;
-      background: transparent;
-    }
-
-    .val-hotspot:hover {
-      filter: brightness(1.2);
-    }
-
-    /* Üst Sol: < BACK // PLAY */
-    .btn-top-back {
-      left: 1.5%;
-      top: 1.8%;
-      width: 11%;
-      height: 5.5%;
       display: flex;
       align-items: center;
       gap: 6px;
-      font-family: 'Rajdhani', sans-serif;
-      font-size: 13px;
-      font-weight: 700;
-      color: rgba(255, 255, 255, 0.85);
-      letter-spacing: 1px;
-      background: rgba(0, 0, 0, 0.01);
-      border-radius: 4px;
-    }
-    .btn-top-back:hover {
-      color: #fff;
-      background: rgba(255, 255, 255, 0.08);
+      transition: all 0.2s ease;
     }
 
-    /* Üst Menü İkonları: Agents, Play, Skins, Store, Settings */
-    .nav-icon-btn {
-      top: 1.2%;
-      height: 6.8%;
-      border-radius: 6px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background: rgba(0, 0, 0, 0.01);
-    }
-    .nav-icon-btn:hover {
+    .topbar-back-btn:hover {
       background: rgba(255, 255, 255, 0.1);
-      box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+      color: #fff;
+      border-color: var(--val-cyan);
     }
 
-    .btn-nav-home { left: 29.5%; width: 3.2%; }
-    .btn-nav-battlepass { left: 32.8%; width: 3.2%; }
-    .btn-nav-agents { left: 36.1%; width: 3.2%; }
-    .btn-nav-play { left: 45.4%; width: 8.8%; }
-    .btn-nav-skins { left: 56.6%; width: 3.2%; }
-    .btn-nav-store { left: 60.1%; width: 3.2%; }
-    .btn-nav-contracts { left: 63.5%; width: 3.2%; }
-
-    .btn-top-settings {
-      right: 1.2%;
-      top: 1.5%;
-      width: 3.5%;
-      height: 6.2%;
-      border-radius: 50%;
-    }
-    .btn-top-settings:hover {
-      background: rgba(255, 255, 255, 0.15);
-      box-shadow: 0 0 14px rgba(255, 255, 255, 0.3);
+    .val-logo {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      color: #fff;
     }
 
-    /* Üst Banner: JOIN THE CONFLICT */
-    .btn-top-banner {
-      left: 34%;
-      top: 11%;
-      width: 28%;
-      height: 5.6%;
+    .val-logo span {
+      color: var(--val-red);
+    }
+
+    /* Üst Menü İkon Butonları */
+    .topbar-nav {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .nav-btn {
+      background: none;
+      border: none;
+      color: var(--val-muted);
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 8px 16px;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .nav-btn:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.06);
       border-radius: 4px;
     }
-    .btn-top-banner:hover {
-      box-shadow: 0 0 15px rgba(245, 183, 0, 0.5);
+
+    .nav-btn.active {
+      color: #fff;
     }
 
-    /* Sol Menü: QUEUE UNRATED, PARTY CODE, PARTY CLOSED */
-    .btn-left-queue {
-      left: 1.5%;
-      top: 39%;
-      width: 14%;
-      height: 7.5%;
-      border-radius: 6px;
-    }
-    .btn-left-queue:hover {
-      background: rgba(255, 255, 255, 0.08);
-      box-shadow: 0 0 12px rgba(0, 245, 212, 0.3);
-    }
-
-    .btn-left-code {
-      left: 1.5%;
-      top: 48%;
-      width: 14%;
-      height: 6.5%;
-      border-radius: 6px;
-    }
-    .btn-left-code:hover {
-      background: rgba(255, 255, 255, 0.08);
-      box-shadow: 0 0 12px rgba(255, 255, 255, 0.2);
-    }
-
-    .btn-left-closed {
-      left: 1.5%;
-      top: 57%;
-      width: 14%;
-      height: 6.5%;
-      border-radius: 6px;
-    }
-    .btn-left-closed:hover {
-      background: rgba(255, 255, 255, 0.08);
-    }
-
-    /* ==========================================================================
-       ORTA SLOTLAR: 1, 2, 3 (BİZ), 4, 5
-       ========================================================================== */
-    .slot-empty {
+    .nav-btn.active::after {
+      content: '';
       position: absolute;
-      top: 26%;
-      height: 52%;
-      width: 11.5%;
+      bottom: -18px;
+      left: 12px;
+      right: 12px;
+      height: 3px;
+      background: var(--val-red);
+      box-shadow: 0 0 10px var(--val-red);
+    }
+
+    .topbar-right {
       display: flex;
-      justify-content: center;
       align-items: center;
+      gap: 20px;
+    }
+
+    .currency-display {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.9);
+      background: rgba(10, 16, 24, 0.6);
+      padding: 6px 14px;
       border-radius: 6px;
-      cursor: pointer;
-      z-index: 15;
-      transition: all 0.2s ease;
+      border: 1px solid rgba(255, 255, 255, 0.08);
     }
 
-    .slot-empty:hover {
-      background: rgba(255, 255, 255, 0.04);
-      box-shadow: inset 0 0 16px rgba(0, 245, 212, 0.25);
+    .currency-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
 
-    .slot-plus-btn {
-      width: 32px;
-      height: 32px;
+    .currency-item span {
+      color: var(--val-gold);
+    }
+
+    .btn-settings-gear {
+      width: 38px;
+      height: 38px;
       border-radius: 50%;
-      border: 1px solid rgba(255, 255, 255, 0.35);
-      background: rgba(11, 17, 24, 0.7);
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
       color: #fff;
       display: flex;
       justify-content: center;
       align-items: center;
-      font-size: 20px;
-      font-weight: 700;
+      font-size: 18px;
+      cursor: pointer;
       transition: all 0.2s ease;
-      opacity: 0.8;
     }
 
-    .slot-empty:hover .slot-plus-btn {
-      opacity: 1;
-      transform: scale(1.15);
-      border-color: var(--val-cyan);
-      box-shadow: 0 0 12px var(--val-cyan);
+    .btn-settings-gear:hover {
+      background: var(--val-red);
+      border-color: var(--val-red);
+      box-shadow: 0 0 14px var(--val-red);
+      transform: rotate(45deg);
     }
 
-    .slot-1 { left: 18.6%; }
-    .slot-2 { left: 30.5%; }
-    .slot-4 { left: 55.4%; }
-    .slot-5 { left: 67.2%; }
-
-    /* SLOT 3: SADECE BİZ GÖRÜNÜYORUZ (0nlyany_ / GELİŞTİRİCİ KARTI) */
-    .slot-player-card {
+    /* SOL MENÜ: MOD SEÇİMİ, ODA KODU VE KİLİT */
+    .lobby-sidebar-left {
       position: absolute;
-      left: 42.6%;
-      top: 18.5%;
-      width: 13.8%;
-      height: 67.5%;
-      z-index: 20;
+      left: 36px;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 30;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      cursor: pointer;
-      transition: transform 0.22s ease, filter 0.22s ease;
+      gap: 14px;
+      width: 220px;
     }
 
-    .slot-player-card:hover {
-      transform: translateY(-3px) scale(1.02);
-      filter: drop-shadow(0 0 18px rgba(245, 183, 0, 0.6));
+    .side-card-btn {
+      background: rgba(12, 18, 26, 0.82);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 8px;
+      padding: 14px 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.2s ease;
+      backdrop-filter: blur(8px);
+      text-align: left;
+    }
+
+    .side-card-btn:hover {
+      border-color: var(--val-cyan);
+      background: rgba(18, 28, 40, 0.9);
+      box-shadow: 0 0 16px rgba(0, 245, 212, 0.25);
+      transform: translateX(4px);
+    }
+
+    .side-card-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--val-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .side-card-value {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 16px;
+      font-weight: 800;
+      color: #fff;
+      margin-top: 2px;
+      letter-spacing: 1px;
+    }
+
+    .side-card-icon {
+      font-size: 20px;
+      color: var(--val-cyan);
+    }
+
+    /* ORTA SLOTLAR ALANI (FLEXBOX İLE TAM ORTALANMIŞ 5 SLOT) */
+    .lobby-slots-container {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -46%);
+      width: min(1120px, 80vw);
+      height: min(540px, 66vh);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 18px;
+      z-index: 25;
+    }
+
+    /* BOŞ SLOT ÇERÇEVESİ (1, 2, 4, 5) */
+    .slot-frame {
+      flex: 1;
+      height: 100%;
+      max-width: 190px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 8px;
+      background: rgba(8, 14, 20, 0.35);
+      backdrop-filter: blur(4px);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.22s ease;
+    }
+
+    .slot-frame:hover {
+      border-color: var(--val-cyan);
+      background: rgba(0, 245, 212, 0.08);
+      box-shadow: 0 0 20px rgba(0, 245, 212, 0.25);
+      transform: translateY(-4px);
+    }
+
+    .slot-plus-circle {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      background: rgba(15, 25, 35, 0.85);
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 24px;
+      font-weight: 700;
+      transition: all 0.2s ease;
+    }
+
+    .slot-frame:hover .slot-plus-circle {
+      border-color: var(--val-cyan);
+      color: var(--val-cyan);
+      box-shadow: 0 0 14px var(--val-cyan);
+      transform: scale(1.15);
+    }
+
+    .slot-frame-label {
+      margin-top: 12px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--val-muted);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    /* SLOT 3: SADECE BİZ GÖRÜNÜYORUZ (0nlyany_ ÖZEL VALORANT KARTI) */
+    .slot-player-card-active {
+      flex: 1.25;
+      height: 104%;
+      max-width: 235px;
+      border: 2px solid rgba(245, 183, 0, 0.65);
+      border-radius: 10px;
+      background: rgba(14, 22, 32, 0.92);
+      box-shadow: 0 10px 35px rgba(0, 0, 0, 0.8), 0 0 25px rgba(245, 183, 0, 0.3);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      cursor: pointer;
+      overflow: hidden;
+      transition: all 0.25s ease;
+      z-index: 30;
+    }
+
+    .slot-player-card-active:hover {
+      transform: translateY(-6px) scale(1.02);
+      box-shadow: 0 16px 45px rgba(0, 0, 0, 0.9), 0 0 35px rgba(245, 183, 0, 0.55);
+      border-color: #ffd700;
+    }
+
+    .player-card-top-tag {
+      height: 38px;
+      background: linear-gradient(180deg, rgba(245, 183, 0, 0.25) 0%, rgba(14, 22, 32, 0.8) 100%);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 14px;
+      border-bottom: 1px solid rgba(245, 183, 0, 0.3);
+    }
+
+    .leader-chevron {
+      color: var(--val-gold);
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .level-badge {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 13px;
+      font-weight: 800;
+      color: #fff;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 2px 8px;
+      border-radius: 4px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .player-card-art-wrap {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #090e14;
     }
 
     .player-card-img {
       width: 100%;
       height: 100%;
-      object-fit: contain;
-      pointer-events: none;
+      object-fit: cover;
+      object-position: center top;
+      transition: transform 0.3s ease;
     }
 
-    /* Alt Mikrofon / Hoparlör İkonu */
-    .player-speaker-btn {
+    .slot-player-card-active:hover .player-card-img {
+      transform: scale(1.04);
+    }
+
+    .ready-pill-badge {
       position: absolute;
-      bottom: 2%;
-      width: 24px;
-      height: 24px;
+      bottom: 10px;
+      background: rgba(8, 20, 16, 0.88);
+      border: 1px solid var(--val-cyan);
+      color: var(--val-cyan);
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      padding: 3px 16px;
+      border-radius: 20px;
+      box-shadow: 0 0 12px rgba(0, 245, 212, 0.4);
+      animation: readyPulse 2s infinite ease-in-out;
+    }
+
+    @keyframes readyPulse {
+      0%, 100% { box-shadow: 0 0 8px rgba(0, 245, 212, 0.3); }
+      50% { box-shadow: 0 0 16px rgba(0, 245, 212, 0.7); }
+    }
+
+    .player-card-bottom-plate {
+      padding: 12px 14px;
+      background: linear-gradient(180deg, #16202c 0%, #0d141d 100%);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .player-nameplate-title {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 18px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: 1px;
+    }
+
+    .player-nameplate-sub {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--val-gold);
+      letter-spacing: 0.5px;
+    }
+
+    .player-mic-btn {
+      width: 30px;
+      height: 30px;
       border-radius: 50%;
-      background: rgba(15, 25, 35, 0.9);
-      border: 1px solid rgba(245, 183, 0, 0.5);
-      color: #f5b700;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: var(--val-cyan);
+      font-size: 14px;
       display: flex;
       justify-content: center;
       align-items: center;
-      font-size: 11px;
       cursor: pointer;
-      z-index: 22;
       transition: all 0.15s ease;
     }
-    .player-speaker-btn:hover {
-      transform: scale(1.15);
-      border-color: #fff;
+
+    .player-mic-btn:hover {
+      background: rgba(0, 245, 212, 0.2);
+      border-color: var(--val-cyan);
+      transform: scale(1.1);
     }
 
-    /* ==========================================================================
-       ALT BUTONLAR: PRACTICE, START, LEAVE PARTY, PARTY CHAT
-       ========================================================================== */
-    .btn-bottom-practice {
-      left: 26.5%;
-      top: 87.2%;
-      width: 12.8%;
-      height: 6.4%;
-      border-radius: 4px;
-      background: rgba(255, 255, 255, 0.01);
+    /* ALT AKSİYON ÇUBUĞU (PRACTICE, START, LEAVE PARTY) */
+    .lobby-bottom-bar {
+      position: absolute;
+      bottom: 28px;
+      left: 0;
+      right: 0;
       display: flex;
       justify-content: center;
       align-items: center;
-      font-family: 'Rajdhani', sans-serif;
-      font-size: 15px;
-      font-weight: 700;
-      color: #fff;
-      letter-spacing: 2px;
+      gap: 24px;
+      z-index: 35;
     }
-    .btn-bottom-practice:hover {
-      background: rgba(255, 255, 255, 0.12);
-      box-shadow: 0 0 14px rgba(255, 255, 255, 0.3);
+
+    .btn-action-practice {
+      padding: 14px 28px;
+      border-radius: 6px;
+      background: rgba(18, 26, 36, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-action-practice:hover {
+      border-color: #fff;
+      background: rgba(255, 255, 255, 0.15);
+      box-shadow: 0 0 16px rgba(255, 255, 255, 0.25);
+      transform: translateY(-2px);
     }
 
     /* BÜYÜK KIRMIZI START BUTONU */
-    .btn-bottom-start {
-      left: 41%;
-      top: 87.2%;
-      width: 15%;
-      height: 6.4%;
-      border-radius: 4px;
+    .btn-action-start {
+      padding: 16px 56px;
+      border-radius: 6px;
       background: var(--val-red);
+      border: none;
       color: #fff;
-      display: flex;
-      justify-content: center;
-      align-items: center;
       font-family: 'Rajdhani', sans-serif;
-      font-size: 22px;
+      font-size: 26px;
       font-weight: 800;
-      letter-spacing: 4px;
+      letter-spacing: 5px;
       text-transform: uppercase;
-      box-shadow: 0 0 24px rgba(255, 70, 85, 0.7);
-      animation: startPulse 2.4s infinite ease-in-out;
+      cursor: pointer;
+      box-shadow: 0 0 28px rgba(255, 70, 85, 0.75);
+      transition: all 0.2s ease;
+      animation: startPulseBtn 2.4s infinite ease-in-out;
     }
 
-    .btn-bottom-start:hover {
+    .btn-action-start:hover {
       background: var(--val-red-hover);
-      box-shadow: 0 0 35px rgba(255, 70, 85, 0.95);
-      transform: scale(1.03);
+      box-shadow: 0 0 42px rgba(255, 70, 85, 1);
+      transform: scale(1.04) translateY(-2px);
     }
 
-    @keyframes startPulse {
-      0%, 100% { box-shadow: 0 0 20px rgba(255, 70, 85, 0.6); }
-      50% { box-shadow: 0 0 32px rgba(255, 70, 85, 0.95); }
+    @keyframes startPulseBtn {
+      0%, 100% { box-shadow: 0 0 22px rgba(255, 70, 85, 0.6); }
+      50% { box-shadow: 0 0 38px rgba(255, 70, 85, 0.95); }
     }
 
-    .btn-bottom-leave {
-      left: 57.5%;
-      top: 87.2%;
-      width: 12.8%;
-      height: 6.4%;
-      border-radius: 4px;
-      background: rgba(255, 255, 255, 0.01);
-      display: flex;
-      justify-content: center;
-      align-items: center;
+    .btn-action-leave {
+      padding: 14px 28px;
+      border-radius: 6px;
+      background: rgba(18, 26, 36, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
       font-family: 'Rajdhani', sans-serif;
-      font-size: 14px;
+      font-size: 16px;
       font-weight: 700;
-      color: #fff;
       letter-spacing: 1.5px;
-    }
-    .btn-bottom-leave:hover {
-      background: rgba(255, 70, 85, 0.18);
-      color: var(--val-red);
-      box-shadow: 0 0 12px rgba(255, 70, 85, 0.3);
-    }
-
-    /* Sol Alt: Party Chat Kutusu */
-    .party-chat-container {
-      position: absolute;
-      left: 0.5%;
-      top: 95.8%;
-      width: 24%;
-      height: 4.2%;
-      z-index: 25;
-      display: flex;
-      align-items: center;
-    }
-
-    .party-chat-input {
-      width: 100%;
-      height: 100%;
-      background: rgba(5, 10, 15, 0.85);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 4px;
-      color: #fff;
-      font-family: 'Sora', sans-serif;
-      font-size: 11px;
-      padding: 0 28px 0 44px;
-      outline: none;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
       transition: all 0.2s ease;
     }
 
-    .party-chat-input:focus {
-      border-color: var(--val-cyan);
-      box-shadow: 0 0 10px rgba(0, 245, 212, 0.3);
-      background: rgba(10, 18, 26, 0.95);
+    .btn-action-leave:hover {
+      border-color: var(--val-red);
+      color: var(--val-red);
+      background: rgba(255, 70, 85, 0.15);
+      transform: translateY(-2px);
     }
 
-    .party-chat-label {
+    /* SOL ALT: SOHBET KUTUSU */
+    .lobby-chat-widget {
       position: absolute;
-      left: 6px;
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--val-muted);
-      pointer-events: none;
+      bottom: 20px;
+      left: 36px;
+      z-index: 35;
+      width: 280px;
     }
 
-    /* Sohbet Mesaj Balonu Popup */
+    .chat-input-bar {
+      width: 100%;
+      height: 38px;
+      background: rgba(10, 16, 24, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 6px;
+      color: #fff;
+      font-family: 'Sora', sans-serif;
+      font-size: 12px;
+      padding: 0 14px;
+      outline: none;
+      transition: all 0.2s ease;
+      backdrop-filter: blur(6px);
+    }
+
+    .chat-input-bar:focus {
+      border-color: var(--val-cyan);
+      box-shadow: 0 0 12px rgba(0, 245, 212, 0.35);
+      background: rgba(12, 20, 30, 0.95);
+    }
+
     #party-chat-log {
       position: absolute;
-      left: 0.5%;
-      bottom: 4.6%;
-      width: 28%;
-      max-height: 160px;
-      background: rgba(10, 16, 22, 0.95);
+      bottom: 46px;
+      left: 0;
+      width: 320px;
+      max-height: 180px;
+      background: rgba(10, 16, 24, 0.94);
       border: 1px solid rgba(255, 255, 255, 0.15);
-      border-radius: 6px;
-      padding: 10px;
+      border-radius: 8px;
+      padding: 12px;
       overflow-y: auto;
-      z-index: 50;
       display: none;
       flex-direction: column;
       gap: 6px;
       font-size: 12px;
-      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.8);
-      backdrop-filter: blur(8px);
+      box-shadow: 0 10px 35px rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(10px);
     }
 
     #party-chat-log.show { display: flex; }
-    .chat-msg { line-height: 1.4; word-break: break-word; }
+    .chat-msg { line-height: 1.4; }
     .chat-msg .sender { font-weight: 700; color: var(--val-cyan); margin-right: 6px; }
     .chat-msg .system { color: #facc15; font-weight: 600; }
 
-    /* Sağ Taraf: Arkadaşlar Paneli Hotspot */
-    .friends-panel-hotspot {
+    /* SAĞ PANEL: ARKADAŞLAR LİSTESİ */
+    .lobby-friends-sidebar {
       position: absolute;
+      top: 64px;
+      bottom: 0;
       right: 0;
-      top: 7%;
-      width: 5.8%;
-      height: 93%;
-      cursor: pointer;
-      z-index: 12;
+      width: 60px;
+      background: rgba(6, 10, 16, 0.65);
+      border-left: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(10px);
+      z-index: 35;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px 0;
+      gap: 14px;
     }
-    .friends-panel-hotspot:hover {
-      background: rgba(255, 255, 255, 0.03);
+
+    .friend-avatar-circle {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      border: 2px solid var(--val-cyan);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 18px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .friend-avatar-circle:hover {
+      transform: scale(1.15);
+      box-shadow: 0 0 14px var(--val-cyan);
+    }
+
+    .friend-online-dot {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #10b981;
+      border: 2px solid #060a10;
     }
 
     /* ==========================================================================
-       VALORANT MODALLARI (SKİNLER / BOYAMALAR, AYARLAR, AJANLAR, MOD SEÇİMİ)
+       VALORANT MODALLARI (VANDAL BOYAMALARI, AJANLAR, AYARLAR, MOD SEÇİMİ)
        ========================================================================== */
     .val-modal-overlay {
-      position: absolute;
+      position: fixed;
       inset: 0;
-      background: rgba(5, 10, 16, 0.88);
-      backdrop-filter: blur(10px);
+      background: rgba(4, 7, 12, 0.88);
+      backdrop-filter: blur(12px);
       display: none;
       justify-content: center;
       align-items: center;
@@ -512,15 +738,15 @@
     .val-modal-box {
       background: var(--val-card-bg);
       border: 1px solid var(--val-border);
-      border-radius: 10px;
-      width: min(720px, 92vw);
+      border-radius: 12px;
+      width: min(760px, 92vw);
       max-height: 88vh;
       overflow-y: auto;
-      padding: 30px;
+      padding: 32px;
       display: flex;
       flex-direction: column;
-      gap: 20px;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9);
+      gap: 22px;
+      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.95);
       position: relative;
     }
 
@@ -541,13 +767,13 @@
       text-transform: uppercase;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
     }
 
     .modal-title-tag {
       background: var(--val-red);
       font-size: 11px;
-      padding: 2px 8px;
+      padding: 3px 8px;
       border-radius: 4px;
       letter-spacing: 1px;
     }
@@ -557,8 +783,8 @@
       border: 1px solid var(--val-border);
       border-radius: 6px;
       color: var(--val-muted);
-      width: 32px;
-      height: 32px;
+      width: 34px;
+      height: 34px;
       cursor: pointer;
       display: flex;
       justify-content: center;
@@ -573,25 +799,24 @@
       background: var(--val-red);
     }
 
-    /* Skin / Boyama Kartları Grid */
+    /* Vandal Boyama Kartları Grid */
     .skins-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 16px;
-      margin-top: 10px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 18px;
+      margin-top: 8px;
     }
 
     .skin-card {
-      background: rgba(20, 30, 42, 0.8);
+      background: rgba(20, 30, 42, 0.85);
       border: 1px solid var(--val-border);
       border-radius: 8px;
-      padding: 16px;
+      padding: 18px;
       cursor: pointer;
       transition: all 0.22s ease;
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      position: relative;
+      gap: 12px;
     }
 
     .skin-card:hover {
@@ -608,13 +833,13 @@
 
     .skin-color-preview {
       width: 100%;
-      height: 80px;
+      height: 84px;
       border-radius: 6px;
       display: flex;
       justify-content: center;
       align-items: center;
       font-family: 'Rajdhani', sans-serif;
-      font-size: 20px;
+      font-size: 22px;
       font-weight: 800;
       letter-spacing: 2px;
       text-transform: uppercase;
@@ -645,8 +870,8 @@
 
     .skin-info-title {
       font-family: 'Rajdhani', sans-serif;
-      font-size: 18px;
-      font-weight: 700;
+      font-size: 19px;
+      font-weight: 800;
       color: #fff;
     }
 
@@ -658,13 +883,13 @@
 
     .skin-equip-btn {
       margin-top: 6px;
-      padding: 8px 12px;
+      padding: 10px 14px;
       background: rgba(255, 255, 255, 0.08);
       border: 1px solid var(--val-border);
       border-radius: 4px;
       color: #fff;
       font-family: 'Rajdhani', sans-serif;
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 700;
       letter-spacing: 1px;
       cursor: pointer;
@@ -675,21 +900,22 @@
     .skin-card.active .skin-equip-btn {
       background: var(--val-red);
       border-color: var(--val-red);
+      box-shadow: 0 0 12px rgba(255, 70, 85, 0.5);
     }
 
     /* Ajanlar Grid */
     .agents-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 14px;
-      margin-top: 10px;
+      gap: 16px;
+      margin-top: 8px;
     }
 
     .agent-choice-card {
-      background: rgba(20, 30, 42, 0.8);
+      background: rgba(20, 30, 42, 0.85);
       border: 1px solid var(--val-border);
       border-radius: 8px;
-      padding: 14px;
+      padding: 16px;
       text-align: center;
       cursor: pointer;
       transition: all 0.2s ease;
@@ -703,36 +929,36 @@
     .agent-choice-card.active {
       border-color: var(--val-cyan);
       background: rgba(0, 245, 212, 0.15);
-      box-shadow: 0 0 16px rgba(0, 245, 212, 0.4);
+      box-shadow: 0 0 18px rgba(0, 245, 212, 0.4);
     }
 
     .agent-icon-circle {
-      width: 52px;
-      height: 52px;
+      width: 56px;
+      height: 56px;
       border-radius: 50%;
       background: rgba(255, 255, 255, 0.08);
       margin: 0 auto 10px;
       display: flex;
       justify-content: center;
       align-items: center;
-      font-size: 24px;
+      font-size: 26px;
     }
 
     .agent-choice-name {
       font-family: 'Rajdhani', sans-serif;
-      font-size: 18px;
+      font-size: 19px;
       font-weight: 800;
       color: #fff;
     }
 
     .agent-choice-role {
-      font-size: 10px;
+      font-size: 11px;
       color: var(--val-muted);
       text-transform: uppercase;
       letter-spacing: 1px;
     }
 
-    /* Ayarlar Menüsü Form Öğeleri */
+    /* Ayarlar Menüsü Form */
     .settings-group {
       display: flex;
       flex-direction: column;
@@ -752,7 +978,7 @@
       border: 1px solid var(--val-border);
       border-radius: 6px;
       color: #fff;
-      padding: 10px 14px;
+      padding: 11px 16px;
       font-family: inherit;
       font-size: 14px;
       outline: none;
@@ -770,12 +996,12 @@
 
     .pill-btn {
       flex: 1;
-      padding: 9px;
+      padding: 10px;
       background: rgba(11, 17, 24, 0.8);
       border: 1px solid var(--val-border);
       border-radius: 6px;
       color: var(--val-text);
-      font-size: 12px;
+      font-size: 13px;
       font-weight: 600;
       cursor: pointer;
       text-align: center;
@@ -793,22 +1019,22 @@
       box-shadow: 0 0 12px rgba(255, 70, 85, 0.4);
     }
 
-    /* Bildirim Toast Bildirimleri */
+    /* TOAST BİLDİRİMİ */
     #val-toast {
-      position: absolute;
+      position: fixed;
       top: 24px;
       right: 24px;
-      background: rgba(15, 25, 35, 0.95);
+      background: rgba(15, 25, 35, 0.96);
       border-left: 4px solid var(--val-cyan);
       border: 1px solid var(--val-border);
       border-left-width: 4px;
       border-radius: 6px;
-      padding: 12px 20px;
+      padding: 14px 22px;
       color: #fff;
       font-size: 13px;
       font-weight: 600;
       z-index: 999;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.85);
       transform: translateY(-50px);
       opacity: 0;
       transition: all 0.25s ease;
@@ -824,9 +1050,9 @@
        YÜKLEME EKRANI (MATCH LOADING)
        ========================================================================== */
     #match-loading {
-      position: absolute;
+      position: fixed;
       inset: 0;
-      background: #0b1118;
+      background: #06090d;
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -853,40 +1079,40 @@
     .loading-shade {
       position: absolute;
       inset: 0;
-      background: radial-gradient(circle, transparent 40%, rgba(5, 10, 15, 0.85) 100%);
+      background: radial-gradient(circle, transparent 35%, rgba(4, 7, 12, 0.92) 100%);
     }
 
     .loading-content {
       position: relative;
       z-index: 10;
-      width: min(520px, 85vw);
+      width: min(560px, 85vw);
       text-align: center;
     }
 
     .loading-map-title {
       font-family: 'Rajdhani', sans-serif;
-      font-size: 54px;
+      font-size: 58px;
       font-weight: 800;
       letter-spacing: 6px;
       text-transform: uppercase;
       color: #fff;
       margin-bottom: 6px;
-      text-shadow: 0 0 20px rgba(255, 70, 85, 0.4);
+      text-shadow: 0 0 25px rgba(255, 70, 85, 0.5);
     }
 
     .loading-sub {
-      font-size: 13px;
+      font-size: 14px;
       color: var(--val-muted);
       letter-spacing: 2px;
       text-transform: uppercase;
-      margin-bottom: 24px;
+      margin-bottom: 26px;
     }
 
     .loading-bar-bg {
       width: 100%;
-      height: 8px;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 4px;
+      height: 9px;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 5px;
       overflow: hidden;
       position: relative;
     }
@@ -896,11 +1122,11 @@
       height: 100%;
       background: linear-gradient(90deg, var(--val-red), #ff7f8a);
       transition: width 0.2s ease;
-      box-shadow: 0 0 10px var(--val-red);
+      box-shadow: 0 0 12px var(--val-red);
     }
 
     .loading-status-text {
-      margin-top: 14px;
+      margin-top: 16px;
       font-size: 13px;
       font-weight: 600;
       color: var(--val-red);
@@ -911,7 +1137,7 @@
        VALORANT OYUN İÇİ HUD KATMANI
        ========================================================================== */
     #val-hud {
-      position: absolute;
+      position: fixed;
       inset: 0;
       pointer-events: none;
       z-index: 40;
@@ -1017,7 +1243,7 @@
     }
 
     #crosshair {
-      position: absolute;
+      position: fixed;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
@@ -1055,7 +1281,7 @@
 
     /* B Tuşu Kit Menüsü */
     #kit-panel {
-      position: absolute;
+      position: fixed;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
@@ -1112,7 +1338,7 @@
 
     /* ESC Menüsü */
     #pause-menu {
-      position: absolute;
+      position: fixed;
       inset: 0;
       background: rgba(11, 17, 24, 0.85);
       backdrop-filter: blur(8px);
@@ -1270,91 +1496,148 @@
     </div>
 
     <!-- ==========================================================================
-         VALORANT ORİJİNAL LOBİ ARAYÜZÜ (BİREBİR MEDIA_01EE90C1)
+         TAM EKRAN VALORANT LOBİ EKRANI (FULL HD 1080P)
          ========================================================================== -->
     <div id="val-lobby">
-      <div class="lobby-stage">
-        <!-- Orijinal Valorant Lobi Arka Planı (2 Oyuncu Temizlendi, 5 Slot Görünür) -->
-        <img class="lobby-backdrop-img" src="cs16-game/hud-assets/val_lobby_all_empty.jpg" alt="Valorant Lobby" />
+      <!-- 1920x1080 Ultra HD Arka Plan (2 Oyuncu Temizlendi, 5 Slot Görünür) -->
+      <img class="lobby-backdrop-img" src="cs16-game/hud-assets/val_lobby_all_empty_hd.jpg" alt="Valorant Lobby HD" />
 
-        <!-- ÜST SOL: < BACK // PLAY -->
-        <button class="val-hotspot btn-top-back" id="btn-top-back" title="Geri / Bilgi">
-          <span>&lt; BACK // PLAY</span>
-        </button>
+      <!-- ÜST NAVİGASYON ÇUBUĞU -->
+      <header class="val-topbar">
+        <div class="topbar-left">
+          <button class="topbar-back-btn" id="btn-top-back">
+            <span>&lt; BACK // PLAY</span>
+          </button>
+          <div class="val-logo">VALCS <span>2</span></div>
+        </div>
 
-        <!-- ÜST NAVİGASYON İKONLARI -->
-        <button class="val-hotspot nav-icon-btn btn-nav-home" id="btn-nav-home" title="Ana Sayfa"></button>
-        <button class="val-hotspot nav-icon-btn btn-nav-battlepass" id="btn-nav-battlepass" title="Savaş Bileti"></button>
-        <button class="val-hotspot nav-icon-btn btn-nav-agents" id="btn-nav-agents" title="Ajanlar"></button>
-        <button class="val-hotspot nav-icon-btn btn-nav-play" id="btn-nav-play" title="Oyna (Aktif Lobi)"></button>
-        <button class="val-hotspot nav-icon-btn btn-nav-skins" id="btn-nav-skins" title="Koleksiyon // Vandal Boyamaları"></button>
-        <button class="val-hotspot nav-icon-btn btn-nav-store" id="btn-nav-store" title="Mağaza"></button>
-        <button class="val-hotspot nav-icon-btn btn-nav-contracts" id="btn-nav-contracts" title="Sözleşmeler"></button>
+        <nav class="topbar-nav">
+          <button class="nav-btn" id="btn-nav-home">🏠 Ana Sayfa</button>
+          <button class="nav-btn" id="btn-nav-agents">👤 Ajanlar</button>
+          <button class="nav-btn active" id="btn-nav-play">⚔️ Oyna</button>
+          <button class="nav-btn" id="btn-nav-skins">🔫 Koleksiyon</button>
+          <button class="nav-btn" id="btn-nav-store">🛒 Mağaza</button>
+        </nav>
 
-        <!-- SAĞ ÜST AYARLAR DİŞLİSİ -->
-        <button class="val-hotspot btn-top-settings" id="btn-top-settings" title="Ayarlar"></button>
+        <div class="topbar-right">
+          <div class="currency-display">
+            <div class="currency-item">VP: <span>2,786</span></div>
+            <div class="currency-item">RP: <span>635</span></div>
+            <div class="currency-item">KC: <span>4,214</span></div>
+          </div>
+          <button class="btn-settings-gear" id="btn-top-settings" title="Ayarlar">⚙️</button>
+        </div>
+      </header>
 
-        <!-- ÜST BANNER (JOIN THE CONFLICT) -->
-        <button class="val-hotspot btn-top-banner" id="btn-top-banner" title="Etkinlik Bilgisi"></button>
+      <!-- SOL MENÜ: MOD SEÇİMİ, ODA KODU VE KİLİT -->
+      <div class="lobby-sidebar-left">
+        <div class="side-card-btn" id="btn-left-queue">
+          <div>
+            <div class="side-card-label">SIRA / MOD</div>
+            <div class="side-card-value" id="label-queue-mode">UNRATED 5V5</div>
+          </div>
+          <div class="side-card-icon">⚡</div>
+        </div>
 
-        <!-- SOL MENÜ: QUEUE UNRATED / PARTY CODE / PARTY CLOSED -->
-        <button class="val-hotspot btn-left-queue" id="btn-left-queue" title="Maç Modunu Değiştir"></button>
-        <button class="val-hotspot btn-left-code" id="btn-left-code" title="Parti Kodunu Kopyala"></button>
-        <button class="val-hotspot btn-left-closed" id="btn-left-closed" title="Parti Kilidini Değiştir"></button>
+        <div class="side-card-btn" id="btn-left-code">
+          <div>
+            <div class="side-card-label">PARTİ KODU</div>
+            <div class="side-card-value">VALCS-7782</div>
+          </div>
+          <div class="side-card-icon">🔗</div>
+        </div>
 
+        <div class="side-card-btn" id="btn-left-closed">
+          <div>
+            <div class="side-card-label">PARTİ GİZLİLİĞİ</div>
+            <div class="side-card-value" id="label-party-privacy">KİLİTLİ</div>
+          </div>
+          <div class="side-card-icon" id="icon-party-privacy">🔒</div>
+        </div>
+      </div>
+
+      <!-- ORTA SLOTLAR: 1, 2, 3 (0nlyany_), 4, 5 -->
+      <div class="lobby-slots-container">
         <!-- BOŞ SLOT 1 (+) -->
-        <div class="slot-empty slot-1" data-slot="1" title="Arkadaşını Çağır veya Bot Ekle">
-          <div class="slot-plus-btn">+</div>
+        <div class="slot-frame" data-slot="1" title="Slot 1: Arkadaşını Çağır">
+          <div class="slot-plus-circle">+</div>
+          <div class="slot-frame-label">DAVET ET</div>
         </div>
 
-        <!-- BOŞ SLOT 2 (+) (ESKİ AYICIK OYUNCU KALDIRILDI) -->
-        <div class="slot-empty slot-2" data-slot="2" title="Arkadaşını Çağır veya Bot Ekle">
-          <div class="slot-plus-btn">+</div>
+        <!-- BOŞ SLOT 2 (+) (ESKİ AYICIK OYUNCU TEMİZLENDİ) -->
+        <div class="slot-frame" data-slot="2" title="Slot 2: Arkadaşını Çağır">
+          <div class="slot-plus-circle">+</div>
+          <div class="slot-frame-label">DAVET ET</div>
         </div>
 
-        <!-- SLOT 3: SADECE BİZ GÖRÜNÜYORUZ (0nlyany_ / GELİŞTİRİCİ KARTI) -->
-        <div class="slot-player-card" id="slot-player-card" title="Profil & Ajan Kartın (Tıkla Ajan Seç)">
-          <img class="player-card-img" id="player-card-img" src="cs16-game/hud-assets/card_jett.png" alt="0nlyany_ Player Card" />
-          <button class="player-speaker-btn" id="player-speaker-btn" title="Mikrofon Durumu">🔊</button>
+        <!-- SLOT 3: SADECE BİZ GÖRÜNÜYORUZ (0nlyany_ ÖZEL OYUNCU KARTI) -->
+        <div class="slot-player-card-active" id="slot-player-card" title="Profil Kartın (Tıkla Ajan Seç)">
+          <div class="player-card-top-tag">
+            <span class="leader-chevron">^</span>
+            <span class="level-badge">LVL 100</span>
+          </div>
+
+          <div class="player-card-art-wrap">
+            <img class="player-card-img" id="player-card-img" src="cs16-game/hud-assets/card_jett.png" alt="0nlyany_ Agent Card" />
+            <div class="ready-pill-badge">HAZIR</div>
+          </div>
+
+          <div class="player-card-bottom-plate">
+            <div>
+              <div class="player-nameplate-title">0nlyany_</div>
+              <div class="player-nameplate-sub">ValCS 2 · DEVELOPER</div>
+            </div>
+            <button class="player-mic-btn" id="player-speaker-btn" title="Mikrofon Durumu">🔊</button>
+          </div>
         </div>
 
         <!-- BOŞ SLOT 4 (+) -->
-        <div class="slot-empty slot-4" data-slot="4" title="Arkadaşını Çağır veya Bot Ekle">
-          <div class="slot-plus-btn">+</div>
+        <div class="slot-frame" data-slot="4" title="Slot 4: Arkadaşını Çağır">
+          <div class="slot-plus-circle">+</div>
+          <div class="slot-frame-label">DAVET ET</div>
         </div>
 
         <!-- BOŞ SLOT 5 (+) -->
-        <div class="slot-empty slot-5" data-slot="5" title="Arkadaşını Çağır veya Bot Ekle">
-          <div class="slot-plus-btn">+</div>
+        <div class="slot-frame" data-slot="5" title="Slot 5: Arkadaşını Çağır">
+          <div class="slot-plus-circle">+</div>
+          <div class="slot-frame-label">DAVET ET</div>
         </div>
+      </div>
 
-        <!-- ALT BUTONLAR: PRACTICE / START / LEAVE PARTY -->
-        <button class="val-hotspot btn-bottom-practice" id="btn-bottom-practice" title="Poligon / Aim Antrenmanı">
-          PRACTICE 🎯
+      <!-- ALT AKSİYON ÇUBUĞU (PRACTICE, START, LEAVE PARTY) -->
+      <div class="lobby-bottom-bar">
+        <button class="btn-action-practice" id="btn-bottom-practice">
+          <span>PRACTICE</span> 🎯
         </button>
 
-        <button class="val-hotspot btn-bottom-start" id="btn-bottom-start" title="Maçı Başlat">
+        <button class="btn-action-start" id="btn-bottom-start">
           START
         </button>
 
-        <button class="val-hotspot btn-bottom-leave" id="btn-bottom-leave" title="Lobiyi Sıfırla">
+        <button class="btn-action-leave" id="btn-bottom-leave">
           LEAVE PARTY
         </button>
+      </div>
 
-        <!-- SOL ALT: PARTY CHAT KUTUSU -->
-        <div class="party-chat-container">
-          <span class="party-chat-label">Party:</span>
-          <input type="text" class="party-chat-input" id="party-chat-input" placeholder="Parti sohbeti (Enter ile gönder)..." autocomplete="off" />
-        </div>
-
-        <!-- SOHBET MESAJ GEÇMİŞİ BALONU -->
+      <!-- SOL ALT: SOHBET KUTUSU -->
+      <div class="lobby-chat-widget">
+        <input type="text" class="chat-input-bar" id="party-chat-input" placeholder="Parti sohbeti (Enter ile gönder)..." autocomplete="off" />
         <div id="party-chat-log">
-          <div class="chat-msg"><span class="system">[ValCS 2]:</span> Hoş geldin 0nlyany_! Lobi hazır.</div>
-          <div class="chat-msg"><span class="system">[Bilgi]:</span> START'a basarak maça girebilir veya Koleksiyon'dan Vandal boyamanı seçebilirsin.</div>
+          <div class="chat-msg"><span class="system">[ValCS 2]:</span> Lobi hazır! Developer: 0nlyany_</div>
+          <div class="chat-msg"><span class="system">[Bilgi]:</span> START butonu ile maça girebilir veya Koleksiyon'dan Vandal boyamanı seçebilirsin.</div>
         </div>
+      </div>
 
-        <!-- SAĞ ARKADAŞLAR LİSTESİ HOTSPOT -->
-        <div class="friends-panel-hotspot" id="friends-panel-hotspot" title="Arkadaşlar Listesi (0nlyany_ Çevrimiçi)"></div>
+      <!-- SAĞ PANEL: ARKADAŞLAR LİSTESİ -->
+      <div class="lobby-friends-sidebar" id="friends-panel-hotspot" title="Arkadaşlar Listesi">
+        <div class="friend-avatar-circle" title="0nlyany_ (Çevrimiçi)">
+          ⚡
+          <div class="friend-online-dot"></div>
+        </div>
+        <div class="friend-avatar-circle" style="border-color:#a855f7;" title="Radiant Bot (Lobide)">
+          🤖
+          <div class="friend-online-dot"></div>
+        </div>
       </div>
     </div>
 
@@ -1490,14 +1773,6 @@
             <button class="pill-btn active" data-diff="1">Normal</button>
             <button class="pill-btn" data-diff="2">Zor</button>
             <button class="pill-btn" data-diff="3">Uzman</button>
-          </div>
-        </div>
-
-        <div class="settings-group">
-          <label class="settings-label">Karşı Takım Kırmızı Vurgu:</label>
-          <div class="pill-group" id="enemy-glow-group">
-            <button class="pill-btn active" data-glow="on">Açık (Kırmızı Gövde)</button>
-            <button class="pill-btn" data-glow="off">Standart</button>
           </div>
         </div>
 
@@ -1645,14 +1920,19 @@
     }
 
     /* ==========================================================================
-       YAPILANDIRMA VE SABİTLER
+       YAPILANDIRMA VE SAĞLAM CDN KAYNAKLARI
        ========================================================================== */
-    const CSWEB_CDN = "https://raw.githubusercontent.com/sergi4ua/cs16-client/refs/heads/master/src/";
-    const CS16_CDN = "https://cdn.jsdelivr.net/gh/sergi4ua/cs16-client@master/dist";
+    // AIMFLARE ve CSWEB Resmi CDN Kaynakları (Tüm 7 parça doğrulandı)
+    const CSWEB_CDNS = [
+      "https://cdn.jsdelivr.net/gh/daniil-athyx/csweb@main/",
+      "https://fastly.jsdelivr.net/gh/daniil-athyx/csweb@main/",
+      "https://raw.githubusercontent.com/daniil-athyx/csweb/main/"
+    ];
+    const CS16_CDN = "https://cdn.jsdelivr.net/npm/cs16-client@latest/dist/cstrike";
     const XASH_CDN = "https://cdn.jsdelivr.net/npm/xash3d-fwgs@1.2.2/dist";
     const AIMFLARE_CDN = "https://aimflare.com.br/cs16-game/";
     const TOTAL_PARTS = 7;
-    const ZIP_CACHE = "cs16_cache_v2_val";
+    const ZIP_CACHE = "aimflare-csweb-valve-v1";
 
     const VAL_AGENTS = [
       "Jett", "Reyna", "Phoenix", "Omen", "Sage",
@@ -1724,14 +2004,12 @@
       btn.addEventListener("click", () => closeModal(btn.getAttribute("data-close")));
     });
 
-    // Modal dışına tıklayınca kapatma
     document.querySelectorAll(".val-modal-overlay").forEach(overlay => {
       overlay.addEventListener("click", (e) => {
         if (e.target === overlay) overlay.classList.remove("active");
       });
     });
 
-    // Buton Tetikleyicileri
     document.getElementById("btn-top-back")?.addEventListener("click", () => {
       showToast("ValCS 2 Lobi Görünümü · Geliştirici: 0nlyany_");
     });
@@ -1743,38 +2021,36 @@
     document.getElementById("btn-left-code")?.addEventListener("click", () => openModal("modal-party-code"));
 
     document.getElementById("btn-nav-home")?.addEventListener("click", () => showToast("Zaten Ana Lobidesiniz."));
-    document.getElementById("btn-nav-battlepass")?.addEventListener("click", () => showToast("Savaş Bileti: Bölüm 08 · Aktif"));
     document.getElementById("btn-nav-play")?.addEventListener("click", () => showToast("Oyna Modu Aktif"));
     document.getElementById("btn-nav-store")?.addEventListener("click", () => showToast("Mağaza: Tüm Vandal Boyamaları Ücretsiz ve Açık!"));
-    document.getElementById("btn-nav-contracts")?.addEventListener("click", () => showToast("Ajan Sözleşmesi: 0nlyany_ Tamamlandı"));
-    document.getElementById("btn-top-banner")?.addEventListener("click", () => showToast("Etkinlik: Alpha vs Omega Çatışması Devam Ediyor"));
 
     // Parti Kilidi Değiştirme
     document.getElementById("btn-left-closed")?.addEventListener("click", () => {
       isPartyClosed = !isPartyClosed;
       playValSound("click");
-      showToast(isPartyClosed ? "Parti Kilitlendi (PARTY CLOSED)" : "Parti Açıldı (PARTY OPEN)");
+      const label = document.getElementById("label-party-privacy");
+      const icon = document.getElementById("icon-party-privacy");
+      if (isPartyClosed) {
+        if (label) label.textContent = "KİLİTLİ";
+        if (icon) icon.textContent = "🔒";
+        showToast("Parti Kilitlendi (PARTY CLOSED)");
+      } else {
+        if (label) label.textContent = "AÇIK";
+        if (icon) icon.textContent = "🔓";
+        showToast("Parti Açıldı (PARTY OPEN)");
+      }
     });
 
-    // Arkadaş Listesi Tıklama
     document.getElementById("friends-panel-hotspot")?.addEventListener("click", () => {
       showToast("Arkadaş Listesi: 0nlyany_ (Çevrimiçi) · ValCS 2");
     });
 
-    // Boş Slot Tıklamaları (+)
-    document.querySelectorAll(".slot-empty").forEach(slot => {
-      slot.addEventListener("click", () => {
-        const num = slot.getAttribute("data-slot");
-        openModal("modal-party-code");
-      });
+    document.querySelectorAll(".slot-frame").forEach(slot => {
+      slot.addEventListener("click", () => openModal("modal-party-code"));
     });
 
-    // Oyuncu Kartına Tıklama (Slot 3)
-    document.getElementById("slot-player-card")?.addEventListener("click", () => {
-      openModal("modal-agents");
-    });
+    document.getElementById("slot-player-card")?.addEventListener("click", () => openModal("modal-agents"));
 
-    // Mikrofon Butonu
     let isMicMuted = false;
     document.getElementById("player-speaker-btn")?.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -1784,7 +2060,6 @@
       showToast(isMicMuted ? "Mikrofon Sessize Alındı" : "Mikrofon Açık");
     });
 
-    // Parti Linkini Kopyalama
     document.getElementById("btn-copy-party-link")?.addEventListener("click", () => {
       navigator.clipboard?.writeText(window.location.href);
       playValSound("click");
@@ -1792,7 +2067,6 @@
       closeModal("modal-party-code");
     });
 
-    // Parti Sohbeti
     const partyChatInput = document.getElementById("party-chat-input");
     const partyChatLog = document.getElementById("party-chat-log");
 
@@ -1850,7 +2124,6 @@
         selectedAgent = card.getAttribute("data-agent");
         playValSound("equip");
 
-        // Slot 3 Ajan Görselini Güncelle
         const cardImg = document.getElementById("player-card-img");
         if (cardImg) {
           cardImg.src = `cs16-game/hud-assets/card_${selectedAgent}.png`;
@@ -1867,21 +2140,28 @@
       btn.addEventListener("click", () => {
         const q = btn.getAttribute("data-queue");
         playValSound("click");
+        const queueLabel = document.getElementById("label-queue-mode");
         if (q === "practice") {
           selectedMode = "solo";
+          if (queueLabel) queueLabel.textContent = "POLİGON (AIM)";
           showToast("Mod: Poligon / Aim Antrenmanı Seçildi");
         } else if (q === "dm") {
           selectedMode = "dm";
+          if (queueLabel) queueLabel.textContent = "ÖLÜM MAÇI";
           showToast("Mod: Ölüm Maçı Seçildi");
+        } else if (q === "comp") {
+          selectedMode = "5v5";
+          if (queueLabel) queueLabel.textContent = "REKABETÇİ 5V5";
+          showToast("Mod: Rekabetçi 5v5 Seçildi");
         } else {
           selectedMode = "5v5";
-          showToast(`Mod: ${btn.querySelector('span').textContent} Seçildi`);
+          if (queueLabel) queueLabel.textContent = "UNRATED 5V5";
+          showToast("Mod: Derecesiz 5v5 Seçildi");
         }
         closeModal("modal-queue");
       });
     });
 
-    // Ses ve Sens Ayarları
     const valSensInput = document.getElementById("val-sens");
     const csSensPreview = document.getElementById("cs-sens-preview");
 
@@ -1915,7 +2195,6 @@
       chEl.className = selectedCrosshair === "dot" ? "ch-dot" : "ch-cross";
     });
 
-    // Practice Butonu
     document.getElementById("btn-bottom-practice")?.addEventListener("click", () => {
       selectedMode = "solo";
       playValSound("start");
@@ -1925,7 +2204,6 @@
       bootGame();
     });
 
-    // START Butonu
     document.getElementById("btn-bottom-start")?.addEventListener("click", () => {
       playValSound("start");
       document.getElementById("val-lobby").classList.add("hidden");
@@ -1933,14 +2211,13 @@
       bootGame();
     });
 
-    // Leave Party Butonu
     document.getElementById("btn-bottom-leave")?.addEventListener("click", () => {
       playValSound("click");
       showToast("Parti sıfırlandı. Tek kişilik odadasınız.");
     });
 
     /* ==========================================================================
-       BOTPROFILE & CFG DOSYALARI (RESMİ CSBOT FORMATI)
+       BOTPROFILE & CFG DOSYALARI
        ========================================================================== */
     function buildBotProfileDb() {
       const lines = [
@@ -2048,7 +2325,7 @@
         "mp_roundtime 1.92",
         "mp_c4timer 40",
         "mp_startmoney 16000",
-        "hud_centerid 1", // Düşman isimlerini net kırmızı, takım arkadaşlarını mavi gösterir
+        "hud_centerid 1",
         "cl_radartype 1",
         "cl_himodels 1",
         "cl_minmodels 0",
@@ -2123,13 +2400,11 @@
       execCmd("hud_centerid 1");
       execCmd("cancelselect");
 
-      // 1) Spawn ile gelen eski tabancayı drop et
       execCmd("use weapon_usp");
       execCmd("drop");
       execCmd("use weapon_glock18");
       execCmd("drop");
 
-      // 2) Valorant Kitini ver
       execCmd("give " + primary);
       execCmd("give weapon_usp");
       execCmd("give weapon_knife");
@@ -2142,7 +2417,6 @@
         execCmd("give ammo_45acp");
       }
 
-      // 3) Ana silahı ele al
       setTimeout(() => {
         execCmd("cancelselect");
         execCmd("use " + primary);
@@ -2190,16 +2464,26 @@
     }
 
     /* ==========================================================================
-       OYUN BAŞLATICI (BOOT SEQUENCE)
+       GÜVENİLİR PARÇA İNDİRME FONKSİYONU (FALLBACK VE TEKRAR DENEME İLE)
        ========================================================================== */
-    const loadingScreen = document.getElementById("match-loading");
-    const loadingBarFill = document.getElementById("loading-bar-fill");
-    const loadingStatus = document.getElementById("loading-status");
-    const canvas = document.getElementById("canvas");
-
-    function setLoadProgress(pct, msg) {
-      loadingBarFill.style.width = pct + "%";
-      if (msg) loadingStatus.textContent = msg;
+    async function fetchPartWithRetry(partIndex) {
+      for (const baseUrl of CSWEB_CDNS) {
+        const url = `${baseUrl}valve.zip.part${partIndex}`;
+        for (let attempt = 1; attempt <= 2; attempt++) {
+          try {
+            const res = await fetch(url, { cache: "force-cache" });
+            if (res.ok) {
+              const buf = await res.arrayBuffer();
+              if (buf.byteLength > 100000) {
+                return buf;
+              }
+            }
+          } catch (e) {
+            console.warn(`[CSWeb] Parça ${partIndex} indirme denemesi başarısız (${url}):`, e);
+          }
+        }
+      }
+      throw new Error(`Parça ${partIndex} indirilemedi! Lütfen internet bağlantını kontrol et.`);
     }
 
     async function fetchWithFallback(localUrl, cdnUrl) {
@@ -2222,21 +2506,33 @@
       return null;
     }
 
+    /* ==========================================================================
+       OYUN BAŞLATICI (BOOT SEQUENCE)
+       ========================================================================== */
+    const loadingScreen = document.getElementById("match-loading");
+    const loadingBarFill = document.getElementById("loading-bar-fill");
+    const loadingStatus = document.getElementById("loading-status");
+    const canvas = document.getElementById("canvas");
+
+    function setLoadProgress(pct, msg) {
+      loadingBarFill.style.width = pct + "%";
+      if (msg) loadingStatus.textContent = msg;
+    }
+
     async function bootGame() {
       try {
         setLoadProgress(5, "Taban oyun dosyaları kontrol ediliyor...");
 
-        // 1. Taban CS 1.6 Paketi (Önbellek veya CDN)
+        // 1. Taban CS 1.6 Paketi (Önbellekten veya Doğrulanmış CDN'lerden İndir)
         let zipBuf = await idbGet("valve.zip");
         if (!zipBuf) {
-          setLoadProgress(10, "CS 1.6 temel dosyaları indiriliyor...");
+          setLoadProgress(10, "CS 1.6 temel oyun dosyaları indiriliyor (1/7)...");
           const buffers = [];
+
           for (let i = 1; i <= TOTAL_PARTS; i++) {
-            const url = `${CSWEB_CDN}valve.zip.part${i}`;
-            const res = await fetch(url, { cache: "force-cache" });
-            if (!res.ok) throw new Error(`Parça ${i} indirilemedi!`);
-            buffers.push(await res.arrayBuffer());
-            setLoadProgress(10 + (i / TOTAL_PARTS) * 45, `Taban arşiv indiriliyor (%${Math.round((i / TOTAL_PARTS) * 100)})`);
+            setLoadProgress(10 + ((i - 1) / TOTAL_PARTS) * 50, `Temel oyun arşivi indiriliyor (Parça ${i}/7)...`);
+            const partBuf = await fetchPartWithRetry(i);
+            buffers.push(partBuf);
           }
 
           const totalSize = buffers.reduce((a, b) => a + b.byteLength, 0);
@@ -2250,7 +2546,7 @@
           idbSet("valve.zip", zipBuf);
         }
 
-        setLoadProgress(60, "Dosyalar sanal belleğe açılıyor...");
+        setLoadProgress(65, "Dosyalar sanal belleğe açılıyor...");
         const baseZip = await JSZip.loadAsync(zipBuf);
         const files = {};
         const entries = Object.keys(baseZip.files).filter(p => !baseZip.files[p].dir);
@@ -2320,7 +2616,7 @@
           cachedModels["/rodir/cstrike/models/v_knife_fade.mdl"] = knifeU8;
         }
 
-        // Harita ve Nav dosyalarını kesin olarak iki dizine de yaz
+        // Harita ve Nav dosyalarını iki dizine de yaz
         if (bspData) {
           files["/rodir/cstrike/maps/de_ascent_v1.bsp"] = bspData;
           files["/rwdir/cstrike/maps/de_ascent_v1.bsp"] = new Uint8Array(bspData);
@@ -2332,7 +2628,7 @@
 
         // 4. Extras.pk3 Yükle
         setLoadProgress(88, "Arayüz paketleri yükleniyor...");
-        const extrasBuf = await fetchWithFallback("cs16-game/extras.pk3", `${CS16_CDN}/extras.pk3`);
+        const extrasBuf = await fetchWithFallback("cs16-game/extras.pk3", "https://cdn.jsdelivr.net/npm/cs16-client@latest/dist/cstrike/extras.pk3");
 
         // 5. CFG & Bot Veritabanlarını Yaz
         const enc = new TextEncoder();
@@ -2349,9 +2645,11 @@
         files["/rodir/cstrike/game.cfg"] = srvCfg;
         files["/rwdir/cstrike/game.cfg"] = new Uint8Array(srvCfg);
 
+        // Yüksek Çözünürlüklü WebGL Çözünürlüğü (DevicePixelRatio Desteği)
         setLoadProgress(92, "WebAssembly motoru derleniyor...");
-        const width = window.innerWidth;
-        const height = window.innerHeight;
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const width = Math.round(window.innerWidth * dpr);
+        const height = Math.round(window.innerHeight * dpr);
         canvas.width = width;
         canvas.height = height;
 
@@ -2372,6 +2670,11 @@
           "+mp_roundtime", "1.92",
           "+mp_c4timer", "40",
           "+mp_startmoney", "16000",
+          "+gl_texture_anisotropy", "16",
+          "+gl_texture_nearest", "0",
+          "+r_detailtextures", "1",
+          "+gl_round_down", "0",
+          "+gl_vsync", "1",
           "+sv_cheats", "1",
           "+map", selectedMap,
           "-ref", "webgl2"
@@ -2565,7 +2868,6 @@
     window.addEventListener("keydown", (e) => {
       if (!isGameRunning) return;
 
-      // B Tuşu: Loadout Satın Alma Menüsü
       if (e.key === "b" || e.key === "B") {
         if (kitPanel.classList.contains("show")) {
           kitPanel.classList.remove("show");
@@ -2576,14 +2878,12 @@
         }
       }
 
-      // 1, 2, 3 tuşları kit menüsü açıkken hızlı seçim
       if (kitPanel.classList.contains("show")) {
         if (e.key === "1") { giveKitLoadout("ak"); kitPanel.classList.remove("show"); canvas.requestPointerLock?.(); }
         if (e.key === "2") { giveKitLoadout("m4"); kitPanel.classList.remove("show"); canvas.requestPointerLock?.(); }
         if (e.key === "3") { giveKitLoadout("awp"); kitPanel.classList.remove("show"); canvas.requestPointerLock?.(); }
       }
 
-      // R Tuşu Mermi Doldurma
       if (e.key === "r" || e.key === "R") {
         if (hudState.clip < 30 && hudState.reserve > 0) {
           hudState.clip = 30;
@@ -2635,6 +2935,14 @@
     canvas.addEventListener("click", () => {
       if (isGameRunning && !kitPanel.classList.contains("show") && !pauseMenu.classList.contains("show")) {
         canvas.requestPointerLock?.();
+      }
+    });
+
+    window.addEventListener("resize", () => {
+      if (isGameRunning && canvas) {
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        canvas.width = Math.round(window.innerWidth * dpr);
+        canvas.height = Math.round(window.innerHeight * dpr);
       }
     });
   </script>
