@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Valorant 1.6 - Web Edition (Xash3D WASM)</title>
+  <title>ValCS 2 - Valorant Web Edition</title>
 
   <!-- Google Fonts: Rajdhani & Sora -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Sora:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700;800&family=Sora:wght@400;600;700&display=swap" rel="stylesheet" />
 
-  <!-- Xash3D FWGS WebAssembly Emscripten Çekirdeği (jsDelivr CDN) -->
+  <!-- Xash3D FWGS WebAssembly Emscripten Çekirdeği -->
   <script src="https://cdn.jsdelivr.net/npm/xash3d-fwgs@1.2.2/dist/raw.js"></script>
 
   <style>
@@ -18,12 +18,15 @@
       --val-red: #ff4655;
       --val-red-hover: #e03444;
       --val-dark: #0f1923;
-      --val-card: rgba(23, 34, 46, 0.9);
-      --val-border: rgba(255, 255, 255, 0.14);
+      --val-darker: #080c10;
+      --val-card: rgba(20, 30, 42, 0.88);
+      --val-card-active: rgba(255, 70, 85, 0.16);
+      --val-border: rgba(255, 255, 255, 0.12);
+      --val-border-hover: rgba(255, 70, 85, 0.6);
       --val-text: #ece8e1;
       --val-muted: #8b97a2;
       --val-cyan: #00f5d4;
-      --val-gold: #facc15;
+      --val-gold: #f5b700;
     }
 
     * {
@@ -37,7 +40,7 @@
       width: 100%;
       height: 100%;
       overflow: hidden;
-      background-color: var(--val-dark);
+      background-color: var(--val-darker);
       font-family: 'Sora', sans-serif;
       color: var(--val-text);
     }
@@ -61,18 +64,17 @@
     }
 
     /* ==========================================================================
-       ANA MENÜ / LOBİ EKRANI (VALORANT ARAYÜZÜ)
+       ÜST DÜZEY VALORANT LOBİ VE ANA MENÜ SİSTEMİ (ValCS 2)
        ========================================================================== */
     #main-menu {
       position: absolute;
       inset: 0;
-      background: radial-gradient(circle at 75% 25%, #1e2d3d 0%, #0b1118 100%);
+      background: #0b1118;
       display: flex;
       flex-direction: column;
       z-index: 500;
-      overflow-y: auto;
-      padding: 30px 44px;
       transition: opacity 0.35s ease, visibility 0.35s ease;
+      overflow: hidden;
     }
 
     #main-menu.hidden {
@@ -81,99 +83,450 @@
       pointer-events: none;
     }
 
-    .menu-header {
+    /* Gerçek Valorant Arkaplan Katmanı */
+    .menu-bg-container {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      overflow: hidden;
+    }
+
+    .menu-bg-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      filter: brightness(0.45) saturate(1.2);
+      transform: scale(1.03);
+      animation: subtleZoom 25s infinite alternate ease-in-out;
+    }
+
+    @keyframes subtleZoom {
+      0% { transform: scale(1.02); }
+      100% { transform: scale(1.08); }
+    }
+
+    .menu-vignette {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 50% 40%, rgba(15, 25, 35, 0.4) 0%, rgba(8, 12, 16, 0.95) 100%);
+    }
+
+    /* Üst Navigasyon Çubuğu (Valorant Header) */
+    .val-navbar {
+      position: relative;
+      z-index: 10;
+      height: 70px;
+      padding: 0 40px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       border-bottom: 1px solid var(--val-border);
-      padding-bottom: 20px;
-      margin-bottom: 24px;
+      background: rgba(11, 17, 24, 0.75);
+      backdrop-filter: blur(16px);
     }
 
-    .menu-title {
-      font-family: 'Rajdhani', sans-serif;
-      font-size: 34px;
-      font-weight: 700;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      color: var(--val-text);
+    .nav-left {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 36px;
     }
 
-    .menu-title span {
-      color: var(--val-red);
-      font-size: 18px;
-      background: rgba(255, 70, 85, 0.15);
-      border: 1px solid rgba(255, 70, 85, 0.4);
-      padding: 2px 10px;
-      border-radius: 4px;
-      letter-spacing: 1px;
-    }
-
-    .menu-grid {
-      display: grid;
-      grid-template-columns: 1fr 340px;
-      gap: 28px;
-      flex: 1;
-    }
-
-    .section-title {
+    .nav-logo {
       font-family: 'Rajdhani', sans-serif;
-      font-size: 20px;
-      font-weight: 700;
-      color: var(--val-text);
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      margin-bottom: 14px;
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      color: #fff;
       display: flex;
       align-items: center;
       gap: 8px;
     }
 
-    .section-title::before {
+    .nav-logo-badge {
+      background: var(--val-red);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 3px;
+      letter-spacing: 1px;
+    }
+
+    .nav-tabs {
+      display: flex;
+      gap: 12px;
+    }
+
+    .nav-tab-btn {
+      background: none;
+      border: none;
+      color: var(--val-muted);
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 8px 18px;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.2s ease;
+    }
+
+    .nav-tab-btn:hover {
+      color: #fff;
+    }
+
+    .nav-tab-btn.active {
+      color: #fff;
+    }
+
+    .nav-tab-btn.active::after {
+      content: '';
+      position: absolute;
+      bottom: -16px;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--val-red);
+      box-shadow: 0 0 12px var(--val-red);
+    }
+
+    /* Sağ Profil & Geliştirici Kartı */
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .dev-badge {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      font-size: 11px;
+      letter-spacing: 1px;
+    }
+
+    .dev-title {
+      color: var(--val-muted);
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    .dev-name {
+      color: var(--val-cyan);
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .dev-dc {
+      color: #a78bfa;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .profile-card {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255, 255, 255, 0.06);
+      padding: 6px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--val-border);
+    }
+
+    .profile-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--val-red);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    /* ==========================================================================
+       TAB İÇERİK ALANLARI
+       ========================================================================== */
+    .tab-content-area {
+      position: relative;
+      z-index: 10;
+      flex: 1;
+      padding: 30px 50px;
+      overflow-y: auto;
+      display: none;
+    }
+
+    .tab-content-area.active {
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* PLAY TAB */
+    .play-layout {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 36px;
+      flex: 1;
+      align-items: start;
+    }
+
+    .map-showcase {
+      position: relative;
+      background: var(--val-card);
+      border: 1px solid var(--val-border);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+      height: 480px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 40px;
+    }
+
+    .map-showcase-bg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      filter: brightness(0.65);
+      transition: transform 0.4s ease;
+    }
+
+    .map-showcase:hover .map-showcase-bg {
+      transform: scale(1.03);
+    }
+
+    .map-showcase-shade {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(15, 25, 35, 0) 30%, rgba(8, 12, 16, 0.95) 100%);
+    }
+
+    .map-info-wrap {
+      position: relative;
+      z-index: 2;
+    }
+
+    .map-tag {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--val-red);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .map-title {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 52px;
+      font-weight: 800;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: #fff;
+      line-height: 1;
+      margin-bottom: 12px;
+    }
+
+    .map-desc {
+      font-size: 14px;
+      color: var(--val-muted);
+      max-width: 500px;
+      line-height: 1.5;
+    }
+
+    /* Sağ Oyun Ayar Çubuğu */
+    .lobby-settings-card {
+      background: var(--val-card);
+      border: 1px solid var(--val-border);
+      border-radius: 12px;
+      padding: 26px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(12px);
+    }
+
+    .setting-title {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .setting-title::before {
       content: '';
       width: 4px;
-      height: 18px;
+      height: 16px;
       background: var(--val-red);
       display: inline-block;
     }
 
-    /* Ajan Seçim Kartları */
+    .pill-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .pill-btn {
+      flex: 1;
+      padding: 10px;
+      background: rgba(11, 17, 24, 0.8);
+      border: 1px solid var(--val-border);
+      border-radius: 6px;
+      color: var(--val-text);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s ease;
+    }
+
+    .pill-btn:hover {
+      border-color: var(--val-border-hover);
+    }
+
+    .pill-btn.active {
+      background: var(--val-red);
+      border-color: var(--val-red);
+      color: #fff;
+      box-shadow: 0 0 14px rgba(255, 70, 85, 0.4);
+    }
+
+    .play-start-btn {
+      width: 100%;
+      margin-top: 14px;
+      padding: 18px;
+      background: var(--val-red);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 0 6px 30px rgba(255, 70, 85, 0.5);
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .play-start-btn:hover {
+      background: var(--val-red-hover);
+      box-shadow: 0 8px 36px rgba(255, 70, 85, 0.7);
+      transform: translateY(-2px);
+    }
+
+    /* KOLEKSİYON / SKİNLER TABI */
+    .skins-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 22px;
+      margin-top: 16px;
+    }
+
+    .skin-card {
+      background: var(--val-card);
+      border: 1px solid var(--val-border);
+      border-radius: 10px;
+      padding: 20px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .skin-card:hover {
+      border-color: var(--val-red);
+      transform: translateY(-3px);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5);
+    }
+
+    .skin-card.active {
+      border-color: var(--val-red);
+      background: var(--val-card-active);
+      box-shadow: 0 0 20px rgba(255, 70, 85, 0.35);
+    }
+
+    .skin-badge {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      font-size: 10px;
+      font-weight: 700;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 2px 8px;
+      border-radius: 4px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .skin-card.active .skin-badge {
+      background: var(--val-red);
+      color: #fff;
+    }
+
+    .skin-preview-title {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .skin-desc {
+      font-size: 12px;
+      color: var(--val-muted);
+      line-height: 1.4;
+    }
+
+    /* AJANLAR TABI */
     .agent-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-      gap: 14px;
-      margin-bottom: 26px;
+      gap: 16px;
+      margin-top: 16px;
     }
 
     .agent-card {
       background: var(--val-card);
       border: 1px solid var(--val-border);
       border-radius: 8px;
-      padding: 16px 12px;
+      padding: 20px 14px;
       text-align: center;
       cursor: pointer;
       transition: all 0.2s ease;
-      position: relative;
     }
 
     .agent-card:hover {
-      border-color: rgba(255, 70, 85, 0.6);
-      transform: translateY(-2px);
+      border-color: var(--val-red);
+      transform: translateY(-3px);
       background: rgba(30, 45, 62, 0.95);
     }
 
     .agent-card.active {
       border-color: var(--val-red);
-      background: rgba(255, 70, 85, 0.14);
+      background: var(--val-card-active);
       box-shadow: 0 0 16px rgba(255, 70, 85, 0.4);
     }
 
     .agent-icon {
-      font-size: 32px;
-      margin-bottom: 8px;
+      font-size: 36px;
+      margin-bottom: 10px;
     }
 
     .agent-name {
@@ -181,49 +534,44 @@
       font-size: 18px;
       font-weight: 700;
       color: #fff;
-      text-transform: uppercase;
       letter-spacing: 1px;
     }
 
     .agent-role {
       font-size: 11px;
       color: var(--val-muted);
-      margin-top: 2px;
+      margin-top: 3px;
       text-transform: uppercase;
     }
 
-    /* Ayar Panelleri */
-    .settings-panel {
-      background: var(--val-card);
-      border: 1px solid var(--val-border);
-      border-radius: 10px;
-      padding: 22px;
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
-      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+    /* AYARLAR TABI */
+    .settings-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 28px;
+      margin-top: 16px;
     }
 
     .form-group {
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 8px;
     }
 
     .form-label {
       font-size: 12px;
-      font-weight: 600;
+      font-weight: 700;
       color: var(--val-muted);
       text-transform: uppercase;
       letter-spacing: 1px;
     }
 
     .form-control {
-      background: rgba(11, 17, 24, 0.85);
+      background: rgba(11, 17, 24, 0.9);
       border: 1px solid var(--val-border);
       border-radius: 6px;
       color: #fff;
-      padding: 10px 14px;
+      padding: 12px 16px;
       font-family: inherit;
       font-size: 14px;
       outline: none;
@@ -234,58 +582,19 @@
       border-color: var(--val-red);
     }
 
-    .pill-group {
+    /* Alt Bilgi Barı */
+    .menu-footer {
+      position: relative;
+      z-index: 10;
+      height: 42px;
+      padding: 0 40px;
       display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-    }
-
-    .pill-btn {
-      flex: 1;
-      padding: 8px 10px;
-      background: rgba(11, 17, 24, 0.7);
-      border: 1px solid var(--val-border);
-      border-radius: 6px;
-      color: var(--val-text);
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(8, 12, 16, 0.9);
+      border-top: 1px solid var(--val-border);
       font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      text-align: center;
-      transition: all 0.15s ease;
-    }
-
-    .pill-btn:hover {
-      border-color: rgba(255, 70, 85, 0.5);
-    }
-
-    .pill-btn.active {
-      background: var(--val-red);
-      border-color: var(--val-red);
-      color: #fff;
-    }
-
-    .lock-in-btn {
-      width: 100%;
-      margin-top: 10px;
-      padding: 16px;
-      background: var(--val-red);
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      font-family: 'Rajdhani', sans-serif;
-      font-size: 22px;
-      font-weight: 700;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      cursor: pointer;
-      box-shadow: 0 4px 20px rgba(255, 70, 85, 0.4);
-      transition: all 0.2s ease;
-    }
-
-    .lock-in-btn:hover {
-      background: var(--val-red-hover);
-      box-shadow: 0 6px 26px rgba(255, 70, 85, 0.6);
-      transform: translateY(-2px);
+      color: var(--val-muted);
     }
 
     /* ==========================================================================
@@ -315,14 +624,14 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
-      opacity: 0.35;
+      opacity: 0.4;
       filter: blur(2px);
     }
 
     .loading-shade {
       position: absolute;
       inset: 0;
-      background: radial-gradient(circle at center, rgba(15, 25, 35, 0.7) 0%, rgba(11, 17, 24, 0.95) 100%);
+      background: radial-gradient(circle at center, rgba(15, 25, 35, 0.6) 0%, rgba(8, 12, 16, 0.95) 100%);
     }
 
     .loading-content {
@@ -335,9 +644,9 @@
 
     .loading-map-title {
       font-family: 'Rajdhani', sans-serif;
-      font-size: 48px;
-      font-weight: 700;
-      letter-spacing: 3px;
+      font-size: 50px;
+      font-weight: 800;
+      letter-spacing: 4px;
       text-transform: uppercase;
       color: #fff;
       margin-bottom: 6px;
@@ -390,7 +699,6 @@
       display: block;
     }
 
-    /* Üst Skor Çubuğu */
     .val-hud-top {
       position: absolute;
       top: 16px;
@@ -428,7 +736,6 @@
     .round-timer { color: #facc15; font-size: 20px; min-width: 60px; text-align: center; }
     .score-t { color: #f87171; }
 
-    /* Alt Can / Zırh / Silah Çubuğu */
     .val-hud-bottom {
       position: absolute;
       bottom: 20px;
@@ -460,39 +767,12 @@
       font-family: 'Rajdhani', sans-serif;
     }
 
-    .val-hp {
-      font-size: 32px;
-      font-weight: 700;
-      color: #fff;
-    }
+    .val-hp { font-size: 32px; font-weight: 700; color: #fff; }
+    .val-armor { font-size: 24px; font-weight: 600; color: #93c5fd; }
+    .val-agent-tag { font-size: 16px; font-weight: 700; color: var(--val-muted); text-transform: uppercase; }
+    .val-ammo { font-size: 30px; font-weight: 700; color: #fff; }
+    .val-ammo small { font-size: 18px; color: var(--val-muted); margin-left: 4px; }
 
-    .val-armor {
-      font-size: 24px;
-      font-weight: 600;
-      color: #93c5fd;
-    }
-
-    .val-agent-tag {
-      font-size: 16px;
-      font-weight: 700;
-      color: var(--val-muted);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-
-    .val-ammo {
-      font-size: 30px;
-      font-weight: 700;
-      color: #fff;
-    }
-
-    .val-ammo small {
-      font-size: 18px;
-      color: var(--val-muted);
-      margin-left: 4px;
-    }
-
-    /* Headshot Bildirimi */
     .val-hud-hs {
       position: absolute;
       bottom: 120px;
@@ -513,7 +793,6 @@
       filter: drop-shadow(0 0 12px rgba(255, 70, 85, 0.8));
     }
 
-    /* Crosshair */
     #crosshair {
       position: absolute;
       top: 50%;
@@ -551,9 +830,7 @@
       box-shadow: 0 0 1px #000;
     }
 
-    /* ==========================================================================
-       B TUŞU LOADOUT KİT MENÜSÜ
-       ========================================================================== */
+    /* B Tuşu Kit Menüsü */
     #kit-panel {
       position: absolute;
       top: 50%;
@@ -571,31 +848,10 @@
       display: none;
     }
 
-    #kit-panel.show {
-      display: block;
-    }
-
-    .kit-title {
-      font-family: 'Rajdhani', sans-serif;
-      font-size: 26px;
-      font-weight: 700;
-      color: #fff;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      margin-bottom: 4px;
-    }
-
-    .kit-sub {
-      font-size: 13px;
-      color: var(--val-muted);
-      margin-bottom: 18px;
-    }
-
-    .kit-list {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
+    #kit-panel.show { display: block; }
+    .kit-title { font-family: 'Rajdhani', sans-serif; font-size: 26px; font-weight: 700; color: #fff; text-transform: uppercase; }
+    .kit-sub { font-size: 13px; color: var(--val-muted); margin-bottom: 18px; }
+    .kit-list { display: flex; flex-direction: column; gap: 10px; }
 
     .kit-btn {
       display: flex;
@@ -629,16 +885,9 @@
       color: var(--val-red);
     }
 
-    .kit-hint {
-      margin-top: 16px;
-      font-size: 12px;
-      color: var(--val-muted);
-      text-align: center;
-    }
+    .kit-hint { margin-top: 16px; font-size: 12px; color: var(--val-muted); text-align: center; }
 
-    /* ==========================================================================
-       ESC / OYUN İÇİ DURAKLATMA AYARLARI MODALI
-       ========================================================================== */
+    /* ESC Menüsü */
     #pause-menu {
       position: absolute;
       inset: 0;
@@ -650,10 +899,7 @@
       z-index: 300;
     }
 
-    #pause-menu.show {
-      display: flex;
-    }
-
+    #pause-menu.show { display: flex; }
     .pause-box {
       width: 440px;
       background: var(--val-card);
@@ -666,23 +912,8 @@
       box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9);
     }
 
-    .pause-title {
-      font-family: 'Rajdhani', sans-serif;
-      font-size: 28px;
-      font-weight: 700;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      color: #fff;
-      border-bottom: 1px solid var(--val-border);
-      padding-bottom: 12px;
-    }
-
-    .pause-actions {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      margin-top: 10px;
-    }
+    .pause-title { font-family: 'Rajdhani', sans-serif; font-size: 28px; font-weight: 700; text-transform: uppercase; color: #fff; border-bottom: 1px solid var(--val-border); padding-bottom: 12px; }
+    .pause-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
 
     .btn-secondary {
       padding: 12px;
@@ -694,12 +925,9 @@
       font-size: 16px;
       font-weight: 700;
       cursor: pointer;
-      transition: background 0.2s ease;
     }
 
-    .btn-secondary:hover {
-      background: rgba(255, 255, 255, 0.15);
-    }
+    .btn-secondary:hover { background: rgba(255, 255, 255, 0.15); }
 
     .btn-danger {
       padding: 12px;
@@ -711,13 +939,9 @@
       font-size: 16px;
       font-weight: 700;
       cursor: pointer;
-      transition: background 0.2s ease;
     }
 
-    .btn-danger:hover {
-      background: var(--val-red);
-      color: #fff;
-    }
+    .btn-danger:hover { background: var(--val-red); color: #fff; }
   </style>
 </head>
 <body>
@@ -733,7 +957,6 @@
 
     <!-- Valorant DOM HUD Katmanı -->
     <div id="val-hud">
-      <!-- Üst Skor Çubuğu -->
       <div class="val-hud-top">
         <img class="val-hud-score-bg" src="cs16-game/hud-assets/score.png" alt="" draggable="false" />
         <div class="val-score-text">
@@ -743,7 +966,6 @@
         </div>
       </div>
 
-      <!-- Alt Can / Zırh / Silah Çubuğu -->
       <div class="val-hud-bottom">
         <img class="val-hud-hp-bg" src="cs16-game/hud-assets/hp.png" alt="" draggable="false" />
         <div class="val-stat-group">
@@ -756,7 +978,6 @@
         </div>
       </div>
 
-      <!-- Headshot Sıçrama İkonu -->
       <div class="val-hud-hs" id="hud-hs">
         <img src="cs16-game/hud-assets/headshot.png" alt="HEADSHOT" draggable="false" />
       </div>
@@ -769,7 +990,7 @@
       <div class="kit-list">
         <button class="kit-btn" data-kit="ak">
           <span><kbd>1</kbd> VANDAL</span>
-          <em>AK-47</em>
+          <em id="kit-vandal-sub">Asil Vandal</em>
         </button>
         <button class="kit-btn" data-kit="m4">
           <span><kbd>2</kbd> PHANTOM</span>
@@ -817,7 +1038,7 @@
       <div class="loading-shade"></div>
       <div class="loading-content">
         <div class="loading-map-title" id="loading-map-title">ASCENT</div>
-        <div class="loading-sub" id="loading-map-sub">Valorant Rekabetçi · 5x5 · Plant / Defuse</div>
+        <div class="loading-sub" id="loading-map-sub">ValCS 2 · Rekabetçi 5x5 · Plant / Defuse</div>
         <div class="loading-bar-bg">
           <div class="loading-bar-fill" id="loading-bar-fill"></div>
         </div>
@@ -826,73 +1047,64 @@
     </div>
 
     <!-- ==========================================================================
-         ANA MENÜ (LOBİ & AYARLAR)
+         ValCS 2 ANA LOBİ MENÜSÜ
          ========================================================================== -->
     <div id="main-menu">
-      <div class="menu-header">
-        <div class="menu-title">
-          Valorant 1.6 <span>WEB EDITION</span>
+      <!-- Arkaplan Görseli -->
+      <div class="menu-bg-container">
+        <img class="menu-bg-img" src="cs16-game/hud-assets/ascent-splash.png" alt="Valorant Ascent" />
+        <div class="menu-vignette"></div>
+      </div>
+
+      <!-- Üst Navigasyon -->
+      <div class="val-navbar">
+        <div class="nav-left">
+          <div class="nav-logo">
+            VALCS <span class="nav-logo-badge">2.0</span>
+          </div>
+          <div class="nav-tabs">
+            <button class="nav-tab-btn active" data-tab="tab-play">OYNA</button>
+            <button class="nav-tab-btn" data-tab="tab-skins">SKİNLER</button>
+            <button class="nav-tab-btn" data-tab="tab-agents">AJANLAR</button>
+            <button class="nav-tab-btn" data-tab="tab-settings">AYARLAR</button>
+          </div>
         </div>
-        <div style="font-size: 13px; color: var(--val-muted);">
-          Xash3D FWGS WebAssembly & GoldSrc
+
+        <div class="nav-right">
+          <div class="dev-badge">
+            <span class="dev-title">Geliştirici</span>
+            <span class="dev-name">0nlyany_</span>
+            <span class="dev-dc">Discord: 0nlyany_</span>
+          </div>
+          <div class="profile-card">
+            <div class="profile-avatar">⚡</div>
+            <div>
+              <div style="font-weight:700; font-size:13px;" id="nav-player-name">Radiant</div>
+              <div style="font-size:10px; color:var(--val-cyan)">SEVİYE 100</div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div class="menu-grid">
-        <!-- Sol Taraf: Ajan Seçimi -->
-        <div>
-          <div class="section-title">Ajanını Seç</div>
-          <div class="agent-grid" id="agent-selector">
-            <div class="agent-card active" data-agent="jett">
-              <div class="agent-icon">🌪️</div>
-              <div class="agent-name">JETT</div>
-              <div class="agent-role">Düellocu</div>
-            </div>
-            <div class="agent-card" data-agent="reyna">
-              <div class="agent-icon">👁️</div>
-              <div class="agent-name">REYNA</div>
-              <div class="agent-role">Düellocu</div>
-            </div>
-            <div class="agent-card" data-agent="phoenix">
-              <div class="agent-icon">🔥</div>
-              <div class="agent-name">PHOENIX</div>
-              <div class="agent-role">Düellocu</div>
-            </div>
-            <div class="agent-card" data-agent="neon">
-              <div class="agent-icon">⚡</div>
-              <div class="agent-name">NEON</div>
-              <div class="agent-role">Düellocu</div>
-            </div>
-            <div class="agent-card" data-agent="fade">
-              <div class="agent-icon">🐾</div>
-              <div class="agent-name">FADE</div>
-              <div class="agent-role">Öncü</div>
-            </div>
-            <div class="agent-card" data-agent="omen">
-              <div class="agent-icon">🌑</div>
-              <div class="agent-name">OMEN</div>
-              <div class="agent-role">Kontrol Uzmanı</div>
-            </div>
-            <div class="agent-card" data-agent="cypher">
-              <div class="agent-icon">🎩</div>
-              <div class="agent-name">CYPHER</div>
-              <div class="agent-role">Gözcü</div>
-            </div>
-            <div class="agent-card" data-agent="killjoy">
-              <div class="agent-icon">🔧</div>
-              <div class="agent-name">KILLJOY</div>
-              <div class="agent-role">Gözcü</div>
+      <!-- TAB 1: OYNA (PLAY) -->
+      <div class="tab-content-area active" id="tab-play">
+        <div class="play-layout">
+          <!-- Sol Harita Vitrini -->
+          <div class="map-showcase">
+            <img class="map-showcase-bg" src="cs16-game/hud-assets/ascent-splash.png" alt="Ascent" />
+            <div class="map-showcase-shade"></div>
+            <div class="map-info-wrap">
+              <div class="map-tag">REKABETÇİ 5V5 · BOMB DEFUSE</div>
+              <h1 class="map-title">ASCENT</h1>
+              <p class="map-desc">
+                İtalya'nın üzerinde yükselen gökyüzü haritası. A & B bomba alanları, orta kontrolü ve açılıp kapanan zırhlı kapılarıyla tam Valorant deneyimi.
+              </p>
             </div>
           </div>
 
-          <div class="section-title">Oyun & Bot Ayarları</div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-            <div class="form-group">
-              <label class="form-label">Harita:</label>
-              <div class="pill-group" id="map-group">
-                <button class="pill-btn active" data-map="de_ascent_v1">Ascent (Valorant)</button>
-              </div>
-            </div>
+          <!-- Sağ Lobi Ayarları & Oyna Butonu -->
+          <div class="lobby-settings-card">
+            <div class="setting-title">Maç Ayarları</div>
 
             <div class="form-group">
               <label class="form-label">Maç Formatı:</label>
@@ -914,19 +1126,113 @@
             </div>
 
             <div class="form-group">
-              <label class="form-label">Crosshair Stili:</label>
-              <div class="pill-group" id="ch-group">
-                <button class="pill-btn active" data-ch="dot">Cyan Nokta</button>
-                <button class="pill-btn" data-ch="cross">Klasik Artı</button>
+              <label class="form-label">Seçili Vandal Kaplaması:</label>
+              <div style="font-family:'Rajdhani',sans-serif; font-size:16px; font-weight:700; color:var(--val-gold);" id="lobby-selected-skin-label">
+                ✨ ASİL VANDAL (PRIME)
               </div>
             </div>
+
+            <button class="play-start-btn" id="lock-in-btn">OYUNU BAŞLAT</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: SKİNLER (SKINS / WEAPONS) -->
+      <div class="tab-content-area" id="tab-skins">
+        <div class="setting-title" style="margin-bottom:8px;">Vandal Kaplama Koleksiyonu</div>
+        <p style="font-size:13px; color:var(--val-muted);">Oyunda kullanmak istediğin Vandal kaplamasını seç:</p>
+        
+        <div class="skins-grid">
+          <!-- Asil Vandal -->
+          <div class="skin-card active" data-vandal="prime">
+            <span class="skin-badge">SEÇİLDİ</span>
+            <div class="skin-preview-title" style="color:var(--val-gold)">✨ ASİL VANDAL (PRIME)</div>
+            <p class="skin-desc">
+              Altın ve beyaz kaplamasıyla saf lüks. Yüksek detaylı namlu ve özel parlaklık efekti.
+            </p>
+          </div>
+
+          <!-- Yağmacı Vandal -->
+          <div class="skin-card" data-vandal="reaver">
+            <span class="skin-badge">SEÇ</span>
+            <div class="skin-preview-title" style="color:#c084fc">🔮 YAĞMACI VANDAL (REAVER)</div>
+            <p class="skin-desc">
+              Karanlık mor ve obsidyen tonları. Ruh kapanı namlu yapısıyla gölgelerden gelen güç.
+            </p>
+          </div>
+
+          <!-- Standart ChronoVoid Vandal -->
+          <div class="skin-card" data-vandal="default">
+            <span class="skin-badge">SEÇ</span>
+            <div class="skin-preview-title" style="color:#60a5fa">🐉 CHRONOVOID VANDAL</div>
+            <p class="skin-desc">
+              Orijinal 3D Valorant ejder işlemeli mekanik Vandal tasarımı.
+            </p>
           </div>
         </div>
 
-        <!-- Sağ Taraf: Profil, Hassasiyet & Başlat -->
-        <div class="settings-panel">
-          <div class="section-title">Profil & Hassasiyet</div>
+        <div class="setting-title" style="margin-top:36px; margin-bottom:8px;">Başlangıç Silahı (Loadout)</div>
+        <div class="pill-group" id="kit-select-group" style="max-width:480px;">
+          <button class="pill-btn active" data-kit="ak">Vandal (AK-47)</button>
+          <button class="pill-btn" data-kit="m4">Phantom (M4A1)</button>
+          <button class="pill-btn" data-kit="awp">Operator (AWP)</button>
+        </div>
+      </div>
 
+      <!-- TAB 3: AJANLAR (AGENTS) -->
+      <div class="tab-content-area" id="tab-agents">
+        <div class="setting-title" style="margin-bottom:8px;">Ajanını Seç</div>
+        <p style="font-size:13px; color:var(--val-muted);">Seçtiğin ajanın kolları, yetenek teması ve modeli yüklenir:</p>
+
+        <div class="agent-grid" id="agent-selector">
+          <div class="agent-card active" data-agent="jett">
+            <div class="agent-icon">🌪️</div>
+            <div class="agent-name">JETT</div>
+            <div class="agent-role">Düellocu</div>
+          </div>
+          <div class="agent-card" data-agent="reyna">
+            <div class="agent-icon">👁️</div>
+            <div class="agent-name">REYNA</div>
+            <div class="agent-role">Düellocu</div>
+          </div>
+          <div class="agent-card" data-agent="phoenix">
+            <div class="agent-icon">🔥</div>
+            <div class="agent-name">PHOENIX</div>
+            <div class="agent-role">Düellocu</div>
+          </div>
+          <div class="agent-card" data-agent="neon">
+            <div class="agent-icon">⚡</div>
+            <div class="agent-name">NEON</div>
+            <div class="agent-role">Düellocu</div>
+          </div>
+          <div class="agent-card" data-agent="fade">
+            <div class="agent-icon">🐾</div>
+            <div class="agent-name">FADE</div>
+            <div class="agent-role">Öncü</div>
+          </div>
+          <div class="agent-card" data-agent="omen">
+            <div class="agent-icon">🌑</div>
+            <div class="agent-name">OMEN</div>
+            <div class="agent-role">Kontrol</div>
+          </div>
+          <div class="agent-card" data-agent="cypher">
+            <div class="agent-icon">🎩</div>
+            <div class="agent-name">CYPHER</div>
+            <div class="agent-role">Gözcü</div>
+          </div>
+          <div class="agent-card" data-agent="killjoy">
+            <div class="agent-icon">🔧</div>
+            <div class="agent-name">KILLJOY</div>
+            <div class="agent-role">Gözcü</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 4: AYARLAR (SETTINGS) -->
+      <div class="tab-content-area" id="tab-settings">
+        <div class="setting-title" style="margin-bottom:8px;">Hassasiyet & Oynanış Ayarları</div>
+        
+        <div class="settings-grid">
           <div class="form-group">
             <label class="form-label">Oyuncu Adı (Nick):</label>
             <input type="text" id="player-nick" class="form-control" value="Radiant" maxlength="20" />
@@ -935,22 +1241,34 @@
           <div class="form-group">
             <label class="form-label">Valorant Hassasiyeti (Sens):</label>
             <input type="number" id="val-sens" step="0.01" min="0.05" max="3.0" class="form-control" value="0.35" />
-            <div style="font-size: 11px; color: var(--val-cyan); margin-top: 4px;" id="cs-sens-preview">
+            <div style="font-size: 12px; color: var(--val-cyan); margin-top: 4px;" id="cs-sens-preview">
               CS 1.6 Karşılığı: 2.61
             </div>
           </div>
 
           <div class="form-group">
-            <label class="form-label">Başlangıç Silahı (Loadout):</label>
-            <div class="pill-group" id="kit-select-group">
-              <button class="pill-btn active" data-kit="ak">Vandal (AK)</button>
-              <button class="pill-btn" data-kit="m4">Phantom (M4)</button>
-              <button class="pill-btn" data-kit="awp">Operator (AWP)</button>
+            <label class="form-label">Crosshair Stili:</label>
+            <div class="pill-group" id="ch-group">
+              <button class="pill-btn active" data-ch="dot">Cyan Nokta</button>
+              <button class="pill-btn" data-ch="cross">Klasik Artı</button>
             </div>
           </div>
 
-          <button class="lock-in-btn" id="lock-in-btn">KİLİTLE & BAŞLAT</button>
+          <div class="form-group">
+            <label class="form-label">Geliştirici & İletişim Bilgileri:</label>
+            <div style="background:rgba(11,17,24,0.8); border:1px solid var(--val-border); border-radius:6px; padding:12px 16px; font-size:13px;">
+              <div><strong style="color:#fff;">Geliştirici:</strong> <span style="color:var(--val-cyan);">0nlyany_</span></div>
+              <div style="margin-top:4px;"><strong style="color:#fff;">Discord:</strong> <span style="color:#a78bfa;">0nlyany_</span></div>
+              <div style="margin-top:4px; color:var(--val-muted);">ValCS 2 WebGL Engine Port</div>
+            </div>
+          </div>
         </div>
+      </div>
+
+      <!-- Alt Bar -->
+      <div class="menu-footer">
+        <div>ValCS 2.0 Web Edition · Powered by Xash3D WebAssembly</div>
+        <div>Developer: <strong>0nlyany_</strong> | Discord: <strong>0nlyany_</strong></div>
       </div>
     </div>
   </div>
@@ -974,6 +1292,7 @@
 
     let emModule = null;
     let selectedAgent = "jett";
+    let selectedVandalSkin = "prime"; // prime | reaver | default
     const selectedMap = "de_ascent_v1";
     let selectedMode = "5v5";
     let selectedDiff = 1;
@@ -988,7 +1307,6 @@
     let hasJoinedTeam = false;
     let botsSpawned = false;
 
-    // Model önbelleği (reinject için)
     const cachedModels = {};
 
     const hudState = {
@@ -1017,8 +1335,48 @@
     }
 
     /* ==========================================================================
-       LOBİ UI ETKİLEŞİMLERİ
+       VALCS 2 TAB VE LOBİ YÖNETİMİ
        ========================================================================== */
+    document.querySelectorAll(".nav-tab-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".nav-tab-btn").forEach(b => b.classList.remove("active"));
+        document.querySelectorAll(".tab-content-area").forEach(tab => tab.classList.remove("active"));
+
+        btn.classList.add("active");
+        const tabId = btn.getAttribute("data-tab");
+        document.getElementById(tabId)?.classList.add("active");
+      });
+    });
+
+    // Vandal Skin Seçici
+    document.querySelectorAll(".skin-card").forEach(card => {
+      card.addEventListener("click", () => {
+        document.querySelectorAll(".skin-card").forEach(c => {
+          c.classList.remove("active");
+          c.querySelector(".skin-badge").textContent = "SEÇ";
+        });
+        card.classList.add("active");
+        card.querySelector(".skin-badge").textContent = "SEÇİLDİ";
+        selectedVandalSkin = card.getAttribute("data-vandal");
+
+        const label = document.getElementById("lobby-selected-skin-label");
+        const kitSub = document.getElementById("kit-vandal-sub");
+        if (selectedVandalSkin === "prime") {
+          label.innerHTML = "✨ ASİL VANDAL (PRIME)";
+          label.style.color = "var(--val-gold)";
+          if (kitSub) kitSub.textContent = "Asil Vandal";
+        } else if (selectedVandalSkin === "reaver") {
+          label.innerHTML = "🔮 YAĞMACI VANDAL (REAVER)";
+          label.style.color = "#c084fc";
+          if (kitSub) kitSub.textContent = "Yağmacı Vandal";
+        } else {
+          label.innerHTML = "🐉 CHRONOVOID VANDAL";
+          label.style.color = "#60a5fa";
+          if (kitSub) kitSub.textContent = "ChronoVoid Vandal";
+        }
+      });
+    });
+
     const valSensInput = document.getElementById("val-sens");
     const csSensPreview = document.getElementById("cs-sens-preview");
 
@@ -1026,6 +1384,12 @@
       valSens = parseFloat(e.target.value) || 0.35;
       csSens = calculateCsSens(valSens);
       csSensPreview.textContent = `CS 1.6 Karşılığı: ${csSens.toFixed(2)}`;
+    });
+
+    const playerNickInput = document.getElementById("player-nick");
+    playerNickInput.addEventListener("input", (e) => {
+      playerName = e.target.value.trim() || "Radiant";
+      document.getElementById("nav-player-name").textContent = playerName;
     });
 
     document.querySelectorAll(".agent-card").forEach(card => {
@@ -1063,7 +1427,7 @@
        ========================================================================== */
     function buildBotProfileDb() {
       const lines = [
-        "// Valorant 1.6 - BotProfile.db",
+        "// ValCS 2 - BotProfile.db",
         "",
         "Default",
         "\tSkill = 50",
@@ -1154,7 +1518,7 @@
 
     function buildServerCfg() {
       return [
-        'hostname "Valorant 1.6 Comp 5v5"',
+        'hostname "ValCS 2 Comp 5v5"',
         "sv_lan 1",
         "mp_consistency 0",
         "mp_freeforall 0",
@@ -1167,9 +1531,8 @@
         "mp_roundtime 1.92",
         "mp_c4timer 40",
         "mp_startmoney 16000",
-        "sv_restartround 0",
-        "pausable 0",
-        "_vgui_menus 0",
+        "hud_centerid 1", // Düşman isimlerini net kırmızı, takım arkadaşlarını mavi gösterir
+        "cl_radartype 1",
         "cl_himodels 1",
         "cl_minmodels 0",
         "r_drawviewmodel 1",
@@ -1240,9 +1603,10 @@
       execCmd("cl_himodels 1");
       execCmd("cl_minmodels 0");
       execCmd("r_drawviewmodel 1");
+      execCmd("hud_centerid 1");
       execCmd("cancelselect");
 
-      // 1) Spawn ile gelen eski tabancayı temizle (model çakışmasını önler)
+      // 1) Spawn ile gelen eski tabancayı temizle (çakışmayı önler)
       execCmd("use weapon_usp");
       execCmd("drop");
       execCmd("use weapon_glock18");
@@ -1343,7 +1707,6 @@
     }
 
     lockInBtn.addEventListener("click", () => {
-      playerName = document.getElementById("player-nick").value.trim() || "Radiant";
       document.getElementById("main-menu").classList.add("hidden");
       loadingScreen.classList.remove("hidden");
       bootGame();
@@ -1387,8 +1750,8 @@
           files["/rodir/" + path] = await baseZip.files[path].async("uint8array");
         }
 
-        // 2. Valorant Overlay Paketi (Ascent, Ajan Modelleri, Silah Kaplamaları)
-        setLoadProgress(75, "Valorant kaplamaları ve Ascent haritası yükleniyor...");
+        // 2. Valorant Overlay Paketi (Ascent, Kırmızı Düşman Modelleri, Kaplamalar)
+        setLoadProgress(75, "Valorant kaplamaları ve kırmızı düşman modelleri yükleniyor...");
         let bspData = null;
         let navData = null;
 
@@ -1412,14 +1775,17 @@
           }
         }
 
-        // 3. Vandal, Ghost & Bıçak Modellerini (Jett / Fade elleri) doğrudan yükle
-        setLoadProgress(82, "Ajan silah kaplamaları entegre ediliyor...");
-        const agentFolder = (selectedAgent === "jett") ? "jett" : "fade";
+        // 3. Seçilen Vandal Skinini & Ghost/Bıçak Modellerini Yükle
+        setLoadProgress(82, "Seçilen silah kaplamaları entegre ediliyor...");
+        
+        let vandalFile = "v_ak47.mdl";
+        if (selectedVandalSkin === "prime") vandalFile = "v_ak47_prime.mdl";
+        else if (selectedVandalSkin === "reaver") vandalFile = "v_ak47_reaver.mdl";
 
         const [vandalU8, ghostU8, knifeU8] = await Promise.all([
-          fetchWithFallback(`cs16-game/hands/${agentFolder}/v_ak47.mdl`, `${AIMFLARE_CDN}hands/${agentFolder}/v_ak47.mdl`),
-          fetchWithFallback(`cs16-game/hands/${agentFolder}/v_usp.mdl`, `${AIMFLARE_CDN}hands/${agentFolder}/v_usp.mdl`),
-          fetchWithFallback(`cs16-game/hands/${agentFolder}/v_knife.mdl`, `${AIMFLARE_CDN}hands/${agentFolder}/v_knife.mdl`)
+          fetchWithFallback(`cs16-game/hands/jett/${vandalFile}`, `${AIMFLARE_CDN}hands/jett/v_ak47.mdl`),
+          fetchWithFallback("cs16-game/hands/jett/v_usp.mdl", `${AIMFLARE_CDN}hands/jett/v_usp.mdl`),
+          fetchWithFallback("cs16-game/hands/jett/v_knife.mdl", `${AIMFLARE_CDN}hands/jett/v_knife.mdl`)
         ]);
 
         if (vandalU8) {
@@ -1479,7 +1845,6 @@
         canvas.width = width;
         canvas.height = height;
 
-        // Xash3D Komut Satırı Başlatma Argümanları
         const bootArgs = [
           "-windowed",
           "-game", "cstrike",
@@ -1490,6 +1855,7 @@
           "+cl_himodels", "1",
           "+cl_minmodels", "0",
           "+r_drawviewmodel", "1",
+          "+hud_centerid", "1",
           "+pausable", "0",
           "+maxplayers", "12",
           "+mp_freezetime", "3",
@@ -1501,7 +1867,6 @@
           "-ref", "webgl2"
         ];
 
-        // 6. Emscripten Xash3D Motoru
         const Module = await Xash3D({
           noInitialRun: true,
           arguments: bootArgs,
@@ -1536,7 +1901,7 @@
             }
 
             FS.chdir("/rodir");
-            setLoadProgress(100, "Hazır! Maça giriliyor...");
+            setLoadProgress(100, "ValCS 2 Hazır! Maça giriliyor...");
 
             setTimeout(() => {
               loadingScreen.classList.add("hidden");
@@ -1595,6 +1960,7 @@
       execCmd("cl_himodels 1");
       execCmd("cl_minmodels 0");
       execCmd("r_drawviewmodel 1");
+      execCmd("hud_centerid 1");
       execCmd("mp_autoteambalance 0");
       execCmd("mp_limitteams 0");
       execCmd('name "' + playerName + '"');
@@ -1724,7 +2090,6 @@
       });
     });
 
-    // Pointer Lock Değişimi: Fare serbest kaldığında duraklatma menüsünü aç
     document.addEventListener("pointerlockchange", () => {
       if (document.pointerLockElement !== canvas && isGameRunning) {
         if (!kitPanel.classList.contains("show")) {
