@@ -1,0 +1,1722 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Valorant 1.6 - Web Edition (Xash3D WASM)</title>
+
+  <!-- Google Fonts: Rajdhani & Sora -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Sora:wght@400;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Xash3D FWGS WebAssembly Emscripten Çekirdeği (jsDelivr CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/xash3d-fwgs@1.2.2/dist/raw.js"></script>
+
+  <style>
+    :root {
+      --val-red: #ff4655;
+      --val-red-hover: #e03444;
+      --val-dark: #0f1923;
+      --val-card: rgba(23, 34, 46, 0.9);
+      --val-border: rgba(255, 255, 255, 0.14);
+      --val-text: #ece8e1;
+      --val-muted: #8b97a2;
+      --val-cyan: #00f5d4;
+      --val-gold: #facc15;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: var(--val-dark);
+      font-family: 'Sora', sans-serif;
+      color: var(--val-text);
+    }
+
+    #game-root {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #000;
+      overflow: hidden;
+    }
+
+    #canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: crosshair;
+    }
+
+    /* ==========================================================================
+       ANA MENÜ / LOBİ EKRANI (VALORANT ARAYÜZÜ)
+       ========================================================================== */
+    #main-menu {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 75% 25%, #1e2d3d 0%, #0b1118 100%);
+      display: flex;
+      flex-direction: column;
+      z-index: 500;
+      overflow-y: auto;
+      padding: 30px 44px;
+      transition: opacity 0.35s ease, visibility 0.35s ease;
+    }
+
+    #main-menu.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .menu-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--val-border);
+      padding-bottom: 20px;
+      margin-bottom: 24px;
+    }
+
+    .menu-title {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 34px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--val-text);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .menu-title span {
+      color: var(--val-red);
+      font-size: 18px;
+      background: rgba(255, 70, 85, 0.15);
+      border: 1px solid rgba(255, 70, 85, 0.4);
+      padding: 2px 10px;
+      border-radius: 4px;
+      letter-spacing: 1px;
+    }
+
+    .menu-grid {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 28px;
+      flex: 1;
+    }
+
+    .section-title {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--val-text);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-title::before {
+      content: '';
+      width: 4px;
+      height: 18px;
+      background: var(--val-red);
+      display: inline-block;
+    }
+
+    /* Ajan Seçim Kartları */
+    .agent-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 14px;
+      margin-bottom: 26px;
+    }
+
+    .agent-card {
+      background: var(--val-card);
+      border: 1px solid var(--val-border);
+      border-radius: 8px;
+      padding: 16px 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .agent-card:hover {
+      border-color: rgba(255, 70, 85, 0.6);
+      transform: translateY(-2px);
+      background: rgba(30, 45, 62, 0.95);
+    }
+
+    .agent-card.active {
+      border-color: var(--val-red);
+      background: rgba(255, 70, 85, 0.14);
+      box-shadow: 0 0 16px rgba(255, 70, 85, 0.4);
+    }
+
+    .agent-icon {
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+
+    .agent-name {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .agent-role {
+      font-size: 11px;
+      color: var(--val-muted);
+      margin-top: 2px;
+      text-transform: uppercase;
+    }
+
+    /* Ayar Panelleri */
+    .settings-panel {
+      background: var(--val-card);
+      border: 1px solid var(--val-border);
+      border-radius: 10px;
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--val-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .form-control {
+      background: rgba(11, 17, 24, 0.85);
+      border: 1px solid var(--val-border);
+      border-radius: 6px;
+      color: #fff;
+      padding: 10px 14px;
+      font-family: inherit;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s ease;
+    }
+
+    .form-control:focus {
+      border-color: var(--val-red);
+    }
+
+    .pill-group {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .pill-btn {
+      flex: 1;
+      padding: 8px 10px;
+      background: rgba(11, 17, 24, 0.7);
+      border: 1px solid var(--val-border);
+      border-radius: 6px;
+      color: var(--val-text);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s ease;
+    }
+
+    .pill-btn:hover {
+      border-color: rgba(255, 70, 85, 0.5);
+    }
+
+    .pill-btn.active {
+      background: var(--val-red);
+      border-color: var(--val-red);
+      color: #fff;
+    }
+
+    .lock-in-btn {
+      width: 100%;
+      margin-top: 10px;
+      padding: 16px;
+      background: var(--val-red);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(255, 70, 85, 0.4);
+      transition: all 0.2s ease;
+    }
+
+    .lock-in-btn:hover {
+      background: var(--val-red-hover);
+      box-shadow: 0 6px 26px rgba(255, 70, 85, 0.6);
+      transform: translateY(-2px);
+    }
+
+    /* ==========================================================================
+       YÜKLEME EKRANI (MATCH LOADING)
+       ========================================================================== */
+    #match-loading {
+      position: absolute;
+      inset: 0;
+      background: #0b1118;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 400;
+      transition: opacity 0.4s ease, visibility 0.4s ease;
+    }
+
+    #match-loading.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .loading-bg-img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0.35;
+      filter: blur(2px);
+    }
+
+    .loading-shade {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at center, rgba(15, 25, 35, 0.7) 0%, rgba(11, 17, 24, 0.95) 100%);
+    }
+
+    .loading-content {
+      position: relative;
+      z-index: 10;
+      width: 520px;
+      max-width: 90%;
+      text-align: center;
+    }
+
+    .loading-map-title {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 48px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+
+    .loading-sub {
+      font-size: 14px;
+      color: var(--val-muted);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+
+    .loading-bar-bg {
+      width: 100%;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .loading-bar-fill {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, var(--val-red), #ff7f8a);
+      transition: width 0.2s ease;
+    }
+
+    .loading-status-text {
+      margin-top: 14px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--val-red);
+      letter-spacing: 1px;
+    }
+
+    /* ==========================================================================
+       VALORANT OYUN İÇİ HUD KATMANI
+       ========================================================================== */
+    #val-hud {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 40;
+      display: none;
+    }
+
+    .is-playing #val-hud {
+      display: block;
+    }
+
+    /* Üst Skor Çubuğu */
+    .val-hud-top {
+      position: absolute;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(680px, 80vw);
+      height: 52px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .val-hud-score-bg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      user-select: none;
+      filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.7));
+    }
+
+    .val-score-text {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      gap: 36px;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 26px;
+      font-weight: 700;
+    }
+
+    .score-ct { color: #5eead4; }
+    .round-timer { color: #facc15; font-size: 20px; min-width: 60px; text-align: center; }
+    .score-t { color: #f87171; }
+
+    /* Alt Can / Zırh / Silah Çubuğu */
+    .val-hud-bottom {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(600px, 85vw);
+      height: 60px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 24px;
+    }
+
+    .val-hud-hp-bg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.7));
+    }
+
+    .val-stat-group {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      gap: 22px;
+      font-family: 'Rajdhani', sans-serif;
+    }
+
+    .val-hp {
+      font-size: 32px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .val-armor {
+      font-size: 24px;
+      font-weight: 600;
+      color: #93c5fd;
+    }
+
+    .val-agent-tag {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--val-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .val-ammo {
+      font-size: 30px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .val-ammo small {
+      font-size: 18px;
+      color: var(--val-muted);
+      margin-left: 4px;
+    }
+
+    /* Headshot Bildirimi */
+    .val-hud-hs {
+      position: absolute;
+      bottom: 120px;
+      left: 50%;
+      transform: translateX(-50%) scale(0.8);
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.25s ease;
+    }
+
+    .val-hud-hs.show {
+      opacity: 1;
+      transform: translateX(-50%) scale(1.1);
+    }
+
+    .val-hud-hs img {
+      height: 70px;
+      filter: drop-shadow(0 0 12px rgba(255, 70, 85, 0.8));
+    }
+
+    /* Crosshair */
+    #crosshair {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      z-index: 45;
+    }
+
+    .ch-dot {
+      width: 4px;
+      height: 4px;
+      background: #00f5d4;
+      border: 1px solid #000;
+      border-radius: 50%;
+    }
+
+    .ch-cross {
+      position: relative;
+      width: 14px;
+      height: 14px;
+    }
+    .ch-cross::before {
+      content: '';
+      position: absolute;
+      left: 6px; top: 0; width: 2px; height: 14px;
+      background: #00f5d4;
+      box-shadow: 0 0 1px #000;
+    }
+    .ch-cross::after {
+      content: '';
+      position: absolute;
+      top: 6px; left: 0; height: 2px; width: 14px;
+      background: #00f5d4;
+      box-shadow: 0 0 1px #000;
+    }
+
+    /* ==========================================================================
+       B TUŞU LOADOUT KİT MENÜSÜ
+       ========================================================================== */
+    #kit-panel {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(15, 25, 35, 0.95);
+      border: 1px solid var(--val-border);
+      border-radius: 12px;
+      padding: 24px 30px;
+      z-index: 200;
+      width: 480px;
+      max-width: 90%;
+      box-shadow: 0 16px 50px rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(10px);
+      display: none;
+    }
+
+    #kit-panel.show {
+      display: block;
+    }
+
+    .kit-title {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 26px;
+      font-weight: 700;
+      color: #fff;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 4px;
+    }
+
+    .kit-sub {
+      font-size: 13px;
+      color: var(--val-muted);
+      margin-bottom: 18px;
+    }
+
+    .kit-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .kit-btn {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 18px;
+      background: rgba(23, 34, 46, 0.85);
+      border: 1px solid var(--val-border);
+      border-radius: 8px;
+      color: #fff;
+      cursor: pointer;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 18px;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+
+    .kit-btn:hover {
+      border-color: var(--val-red);
+      background: rgba(255, 70, 85, 0.18);
+      transform: translateX(4px);
+    }
+
+    .kit-btn kbd {
+      background: rgba(255, 255, 255, 0.15);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: 700;
+      margin-right: 12px;
+      color: var(--val-red);
+    }
+
+    .kit-hint {
+      margin-top: 16px;
+      font-size: 12px;
+      color: var(--val-muted);
+      text-align: center;
+    }
+
+    /* ==========================================================================
+       ESC / OYUN İÇİ DURAKLATMA AYARLARI MODALI
+       ========================================================================== */
+    #pause-menu {
+      position: absolute;
+      inset: 0;
+      background: rgba(11, 17, 24, 0.85);
+      backdrop-filter: blur(8px);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 300;
+    }
+
+    #pause-menu.show {
+      display: flex;
+    }
+
+    .pause-box {
+      width: 440px;
+      background: var(--val-card);
+      border: 1px solid var(--val-border);
+      border-radius: 12px;
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9);
+    }
+
+    .pause-title {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #fff;
+      border-bottom: 1px solid var(--val-border);
+      padding-bottom: 12px;
+    }
+
+    .pause-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .btn-secondary {
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--val-border);
+      border-radius: 6px;
+      color: #fff;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .btn-danger {
+      padding: 12px;
+      background: rgba(255, 70, 85, 0.15);
+      border: 1px solid rgba(255, 70, 85, 0.4);
+      border-radius: 6px;
+      color: var(--val-red);
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .btn-danger:hover {
+      background: var(--val-red);
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="game-root">
+    <!-- WebGL Canvas (Oyun ekranı) -->
+    <canvas id="canvas"></canvas>
+
+    <!-- Valorant Crosshair -->
+    <div id="crosshair">
+      <div class="ch-dot" id="ch-element"></div>
+    </div>
+
+    <!-- Valorant DOM HUD Katmanı -->
+    <div id="val-hud">
+      <!-- Üst Skor Çubuğu -->
+      <div class="val-hud-top">
+        <img class="val-hud-score-bg" src="cs16-game/hud-assets/score.png" alt="" draggable="false" />
+        <div class="val-score-text">
+          <span class="score-ct" id="hud-score-ct">0</span>
+          <span class="round-timer" id="hud-timer">01:55</span>
+          <span class="score-t" id="hud-score-t">0</span>
+        </div>
+      </div>
+
+      <!-- Alt Can / Zırh / Silah Çubuğu -->
+      <div class="val-hud-bottom">
+        <img class="val-hud-hp-bg" src="cs16-game/hud-assets/hp.png" alt="" draggable="false" />
+        <div class="val-stat-group">
+          <span class="val-hp" id="hud-hp">100</span>
+          <span class="val-armor" id="hud-armor">100</span>
+          <span class="val-agent-tag" id="hud-agent-name">JETT</span>
+        </div>
+        <div class="val-stat-group">
+          <span class="val-ammo" id="hud-ammo">30 <small id="hud-reserve">/ 90</small></span>
+        </div>
+      </div>
+
+      <!-- Headshot Sıçrama İkonu -->
+      <div class="val-hud-hs" id="hud-hs">
+        <img src="cs16-game/hud-assets/headshot.png" alt="HEADSHOT" draggable="false" />
+      </div>
+    </div>
+
+    <!-- B Tuşu Kit Menüsü (Buy Menu) -->
+    <div id="kit-panel">
+      <div class="kit-title">Loadout Menüsü</div>
+      <div class="kit-sub">Kiti seç, anında kuşan (Full Zırh Dahil)</div>
+      <div class="kit-list">
+        <button class="kit-btn" data-kit="ak">
+          <span><kbd>1</kbd> VANDAL</span>
+          <em>AK-47</em>
+        </button>
+        <button class="kit-btn" data-kit="m4">
+          <span><kbd>2</kbd> PHANTOM</span>
+          <em>M4A1</em>
+        </button>
+        <button class="kit-btn" data-kit="awp">
+          <span><kbd>3</kbd> OPERATOR</span>
+          <em>AWP</em>
+        </button>
+      </div>
+      <div class="kit-hint"><kbd>B</kbd> veya <kbd>ESC</kbd> tuşuna basarak kapat</div>
+    </div>
+
+    <!-- ESC / Duraklatma Ayarlar Modalı -->
+    <div id="pause-menu">
+      <div class="pause-box">
+        <div class="pause-title">Oyun İçi Ayarlar</div>
+        
+        <div class="form-group">
+          <label class="form-label">Valorant Hassasiyeti (Sens):</label>
+          <input type="number" id="pause-sens" step="0.01" min="0.05" max="3.0" class="form-control" value="0.35" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Bot Zorluğu:</label>
+          <div class="pill-group" id="pause-diff-group">
+            <button class="pill-btn" data-diff="0">Kolay</button>
+            <button class="pill-btn active" data-diff="1">Normal</button>
+            <button class="pill-btn" data-diff="2">Zor</button>
+            <button class="pill-btn" data-diff="3">Uzman</button>
+          </div>
+        </div>
+
+        <div class="pause-actions">
+          <button class="btn-secondary" id="btn-resume">OYUNA DÖN</button>
+          <button class="btn-secondary" id="btn-restart-round">RAUNDU SIFIRLA</button>
+          <button class="btn-danger" id="btn-to-main-menu">ANA MENÜYE ÇIK</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Yükleme Ekranı (Ascent Match Loading) -->
+    <div id="match-loading" class="hidden">
+      <img class="loading-bg-img" src="cs16-game/hud-assets/ascent-splash.png" alt="" />
+      <div class="loading-shade"></div>
+      <div class="loading-content">
+        <div class="loading-map-title" id="loading-map-title">ASCENT</div>
+        <div class="loading-sub" id="loading-map-sub">Valorant Rekabetçi · 5x5 · Plant / Defuse</div>
+        <div class="loading-bar-bg">
+          <div class="loading-bar-fill" id="loading-bar-fill"></div>
+        </div>
+        <div class="loading-status-text" id="loading-status">Hazırlanıyor...</div>
+      </div>
+    </div>
+
+    <!-- ==========================================================================
+         ANA MENÜ (LOBİ & AYARLAR)
+         ========================================================================== -->
+    <div id="main-menu">
+      <div class="menu-header">
+        <div class="menu-title">
+          Valorant 1.6 <span>WEB EDITION</span>
+        </div>
+        <div style="font-size: 13px; color: var(--val-muted);">
+          Xash3D FWGS WebAssembly & GoldSrc
+        </div>
+      </div>
+
+      <div class="menu-grid">
+        <!-- Sol Taraf: Ajan Seçimi -->
+        <div>
+          <div class="section-title">Ajanını Seç</div>
+          <div class="agent-grid" id="agent-selector">
+            <div class="agent-card active" data-agent="jett">
+              <div class="agent-icon">🌪️</div>
+              <div class="agent-name">JETT</div>
+              <div class="agent-role">Düellocu</div>
+            </div>
+            <div class="agent-card" data-agent="reyna">
+              <div class="agent-icon">👁️</div>
+              <div class="agent-name">REYNA</div>
+              <div class="agent-role">Düellocu</div>
+            </div>
+            <div class="agent-card" data-agent="phoenix">
+              <div class="agent-icon">🔥</div>
+              <div class="agent-name">PHOENIX</div>
+              <div class="agent-role">Düellocu</div>
+            </div>
+            <div class="agent-card" data-agent="neon">
+              <div class="agent-icon">⚡</div>
+              <div class="agent-name">NEON</div>
+              <div class="agent-role">Düellocu</div>
+            </div>
+            <div class="agent-card" data-agent="fade">
+              <div class="agent-icon">🐾</div>
+              <div class="agent-name">FADE</div>
+              <div class="agent-role">Öncü</div>
+            </div>
+            <div class="agent-card" data-agent="omen">
+              <div class="agent-icon">🌑</div>
+              <div class="agent-name">OMEN</div>
+              <div class="agent-role">Kontrol Uzmanı</div>
+            </div>
+            <div class="agent-card" data-agent="cypher">
+              <div class="agent-icon">🎩</div>
+              <div class="agent-name">CYPHER</div>
+              <div class="agent-role">Gözcü</div>
+            </div>
+            <div class="agent-card" data-agent="killjoy">
+              <div class="agent-icon">🔧</div>
+              <div class="agent-name">KILLJOY</div>
+              <div class="agent-role">Gözcü</div>
+            </div>
+          </div>
+
+          <div class="section-title">Oyun & Bot Ayarları</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div class="form-group">
+              <label class="form-label">Harita:</label>
+              <div class="pill-group" id="map-group">
+                <button class="pill-btn active" data-map="de_ascent_v1">Ascent (Valorant)</button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Maç Formatı:</label>
+              <div class="pill-group" id="mode-group">
+                <button class="pill-btn active" data-mode="5v5">5v5 Rekabetçi</button>
+                <button class="pill-btn" data-mode="3v3">3v3 Hafif</button>
+                <button class="pill-btn" data-mode="solo">Tek Başına</button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Bot Zorluğu:</label>
+              <div class="pill-group" id="diff-group">
+                <button class="pill-btn" data-diff="0">Kolay</button>
+                <button class="pill-btn active" data-diff="1">Normal</button>
+                <button class="pill-btn" data-diff="2">Zor</button>
+                <button class="pill-btn" data-diff="3">Uzman</button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Crosshair Stili:</label>
+              <div class="pill-group" id="ch-group">
+                <button class="pill-btn active" data-ch="dot">Cyan Nokta</button>
+                <button class="pill-btn" data-ch="cross">Klasik Artı</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sağ Taraf: Profil, Hassasiyet & Başlat -->
+        <div class="settings-panel">
+          <div class="section-title">Profil & Hassasiyet</div>
+
+          <div class="form-group">
+            <label class="form-label">Oyuncu Adı (Nick):</label>
+            <input type="text" id="player-nick" class="form-control" value="Radiant" maxlength="20" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Valorant Hassasiyeti (Sens):</label>
+            <input type="number" id="val-sens" step="0.01" min="0.05" max="3.0" class="form-control" value="0.35" />
+            <div style="font-size: 11px; color: var(--val-cyan); margin-top: 4px;" id="cs-sens-preview">
+              CS 1.6 Karşılığı: 2.61
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Başlangıç Silahı (Loadout):</label>
+            <div class="pill-group" id="kit-select-group">
+              <button class="pill-btn active" data-kit="ak">Vandal (AK)</button>
+              <button class="pill-btn" data-kit="m4">Phantom (M4)</button>
+              <button class="pill-btn" data-kit="awp">Operator (AWP)</button>
+            </div>
+          </div>
+
+          <button class="lock-in-btn" id="lock-in-btn">KİLİTLE & BAŞLAT</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import JSZip from "https://cdn.skypack.dev/jszip@3.10.1";
+
+    const CSWEB_CDN = "https://cdn.jsdelivr.net/gh/daniil-athyx/csweb@main/";
+    const XASH_CDN = "https://cdn.jsdelivr.net/npm/xash3d-fwgs@1.2.2/dist";
+    const CS16_CDN = "https://cdn.jsdelivr.net/npm/cs16-client@latest/dist/cstrike";
+    const TOTAL_PARTS = 17;
+    const ZIP_CACHE = "cs16-web-valve-cache-v1";
+
+    const VAL_AGENTS = [
+      "Astra", "Breach", "Brimstone", "Chamber", "Cypher", "Deadlock",
+      "Fade", "Gekko", "Harbor", "Iso", "Jett", "KAY/O", "Killjoy",
+      "Neon", "Omen", "Phoenix", "Raze", "Reyna", "Sage", "Skye",
+      "Sova", "Viper", "Vyse", "Yoru"
+    ];
+
+    let emModule = null;
+    let selectedAgent = "jett";
+    const selectedMap = "de_ascent_v1";
+    let selectedMode = "5v5";
+    let selectedDiff = 1;
+    let selectedKit = "ak";
+    let selectedCrosshair = "dot";
+    let valSens = 0.35;
+    let csSens = 2.61;
+    let playerName = "Radiant";
+
+    let isGameRunning = false;
+    let isConnected = false;
+    let hasJoinedTeam = false;
+    let botsSpawned = false;
+
+    // Model önbelleği (reinject için)
+    const cachedModels = {};
+
+    const hudState = {
+      hp: 100,
+      armor: 100,
+      money: 16000,
+      clip: 30,
+      reserve: 90,
+      scoreCt: 0,
+      scoreT: 0,
+      roundSec: 115,
+      alive: true
+    };
+
+    function calculateCsSens(val) {
+      const CS_YAW = 0.022;
+      const VAL_YAW = 0.07;
+      const SENS_FEEL_BOOST = 2.35;
+      return Math.max(0.35, Math.min(14, ((val * VAL_YAW) / CS_YAW) * SENS_FEEL_BOOST));
+    }
+
+    function execCmd(cmd) {
+      if (emModule && emModule.ccall) {
+        emModule.ccall("Cmd_ExecuteString", null, ["string"], [cmd]);
+      }
+    }
+
+    /* ==========================================================================
+       LOBİ UI ETKİLEŞİMLERİ
+       ========================================================================== */
+    const valSensInput = document.getElementById("val-sens");
+    const csSensPreview = document.getElementById("cs-sens-preview");
+
+    valSensInput.addEventListener("input", (e) => {
+      valSens = parseFloat(e.target.value) || 0.35;
+      csSens = calculateCsSens(valSens);
+      csSensPreview.textContent = `CS 1.6 Karşılığı: ${csSens.toFixed(2)}`;
+    });
+
+    document.querySelectorAll(".agent-card").forEach(card => {
+      card.addEventListener("click", () => {
+        document.querySelectorAll(".agent-card").forEach(c => c.classList.remove("active"));
+        card.classList.add("active");
+        selectedAgent = card.getAttribute("data-agent");
+        document.getElementById("hud-agent-name").textContent = selectedAgent.toUpperCase();
+      });
+    });
+
+    function setupPillGroup(groupId, onChange) {
+      const container = document.getElementById(groupId);
+      if (!container) return;
+      container.querySelectorAll(".pill-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          container.querySelectorAll(".pill-btn").forEach(b => b.classList.remove("active"));
+          btn.classList.add("active");
+          onChange(btn);
+        });
+      });
+    }
+
+    setupPillGroup("mode-group", (btn) => selectedMode = btn.getAttribute("data-mode"));
+    setupPillGroup("diff-group", (btn) => selectedDiff = parseInt(btn.getAttribute("data-diff")));
+    setupPillGroup("kit-select-group", (btn) => selectedKit = btn.getAttribute("data-kit"));
+    setupPillGroup("ch-group", (btn) => {
+      selectedCrosshair = btn.getAttribute("data-ch");
+      const chEl = document.getElementById("ch-element");
+      chEl.className = selectedCrosshair === "dot" ? "ch-dot" : "ch-cross";
+    });
+
+    /* ==========================================================================
+       BOTPROFILE & CFG DOSYALARI (RESMİ CSBOT FORMATI)
+       ========================================================================== */
+    function buildBotProfileDb() {
+      const lines = [
+        "// Valorant 1.6 - BotProfile.db",
+        "",
+        "Default",
+        "\tSkill = 50",
+        "\tAggression = 50",
+        "\tReactionTime = 0.35",
+        "\tAttackDelay = 0.3",
+        "\tTeamwork = 75",
+        "\tWeaponPreference = none",
+        "\tCost = 0",
+        "\tDifficulty = NORMAL",
+        "\tVoicePitch = 0",
+        "\tSkin = 0",
+        "End",
+        "",
+        "Template Rifle",
+        "\tWeaponPreference = ak47",
+        "\tWeaponPreference = m4a1",
+        "\tWeaponPreference = ak47",
+        "\tTeamwork = 80",
+        "\tAggression = 50",
+        "End",
+        "",
+        "Template Sniper",
+        "\tWeaponPreference = awp",
+        "\tWeaponPreference = ak47",
+        "\tTeamwork = 70",
+        "\tAggression = 40",
+        "End",
+        "",
+        "Template Expert",
+        "\tSkill = 75",
+        "\tAggression = 55",
+        "\tReactionTime = 0.25",
+        "\tAttackDelay = 0.2",
+        "\tTeamwork = 85",
+        "\tCost = 4",
+        "\tDifficulty = EXPERT",
+        "End",
+        "",
+        "Template Hard",
+        "\tSkill = 60",
+        "\tAggression = 50",
+        "\tReactionTime = 0.32",
+        "\tAttackDelay = 0.25",
+        "\tTeamwork = 80",
+        "\tCost = 3",
+        "\tDifficulty = HARD",
+        "End",
+        "",
+        "Template Normal",
+        "\tSkill = 45",
+        "\tAggression = 45",
+        "\tReactionTime = 0.40",
+        "\tAttackDelay = 0.35",
+        "\tTeamwork = 70",
+        "\tCost = 2",
+        "\tDifficulty = NORMAL",
+        "End",
+        "",
+        "Template Easy",
+        "\tSkill = 30",
+        "\tAggression = 35",
+        "\tReactionTime = 0.55",
+        "\tAttackDelay = 0.60",
+        "\tTeamwork = 60",
+        "\tCost = 1",
+        "\tDifficulty = EASY",
+        "End",
+        ""
+      ];
+
+      const diffs = ["Easy", "Normal", "Hard", "Expert"];
+      const templates = ["Rifle", "Rifle", "Rifle", "Sniper", "Rifle"];
+      let idx = 0;
+      for (const diff of diffs) {
+        for (const agent of VAL_AGENTS) {
+          const tpl = templates[idx % templates.length];
+          lines.push(`${diff}+${tpl} ${agent}`);
+          lines.push(`\tSkin = ${(idx % 4) + 1}`);
+          lines.push(`\tVoicePitch = ${90 + (idx % 20)}`);
+          lines.push("End\n");
+          idx++;
+        }
+      }
+
+      return lines.join("\n");
+    }
+
+    function buildServerCfg() {
+      return [
+        'hostname "Valorant 1.6 Comp 5v5"',
+        "sv_lan 1",
+        "mp_consistency 0",
+        "mp_freeforall 0",
+        "mp_forcerespawn 0",
+        "mp_round_infinite 0",
+        "mp_friendlyfire 0",
+        "mp_autoteambalance 0",
+        "mp_limitteams 0",
+        "mp_freezetime 3",
+        "mp_roundtime 1.92",
+        "mp_c4timer 40",
+        "mp_startmoney 16000",
+        "sv_restartround 0",
+        "pausable 0",
+        "_vgui_menus 0",
+        "maxplayers 12",
+        "bot_quota 0",
+        "bot_difficulty " + selectedDiff,
+        "bot_chatter off",
+        "bot_allow_rifles 1",
+        "bot_allow_snipers 1",
+        "bot_allow_pistols 1",
+        "bot_defer_to_human 0",
+        "bot_auto_vacate 0",
+        "bot_join_after_player 0",
+        "bot_join_team any",
+        ""
+      ].join("\n");
+    }
+
+    /* ==========================================================================
+       INDEXEDDB ÖNBELLEKLEME
+       ========================================================================== */
+    async function idbGet(key) {
+      return new Promise(resolve => {
+        try {
+          const req = indexedDB.open(ZIP_CACHE, 1);
+          req.onupgradeneeded = () => req.result.createObjectStore("blobs");
+          req.onsuccess = () => {
+            const tx = req.result.transaction("blobs", "readonly");
+            const g = tx.objectStore("blobs").get(key);
+            g.onsuccess = () => resolve(g.result || null);
+            g.onerror = () => resolve(null);
+          };
+          req.onerror = () => resolve(null);
+        } catch { resolve(null); }
+      });
+    }
+
+    async function idbSet(key, val) {
+      try {
+        const req = indexedDB.open(ZIP_CACHE, 1);
+        req.onupgradeneeded = () => req.result.createObjectStore("blobs");
+        req.onsuccess = () => {
+          const tx = req.result.transaction("blobs", "readwrite");
+          tx.objectStore("blobs").put(val, key);
+        };
+      } catch {}
+    }
+
+    /* ==========================================================================
+       SİLAH & KİT VERME
+       ========================================================================== */
+    function giveKitLoadout(kit) {
+      selectedKit = kit;
+      if (kit === "ak") {
+        execCmd("give weapon_ak47");
+        execCmd("use weapon_ak47");
+      } else if (kit === "m4") {
+        execCmd("give weapon_m4a1");
+        execCmd("use weapon_m4a1");
+      } else if (kit === "awp") {
+        execCmd("give weapon_awp");
+        execCmd("use weapon_awp");
+      }
+      execCmd("give weapon_usp");
+      execCmd("give weapon_knife");
+      execCmd("give item_assaultsuit");
+      hudState.clip = kit === "awp" ? 10 : 30;
+      hudState.reserve = 90;
+      updateHud();
+    }
+
+    function updateHud() {
+      document.getElementById("hud-hp").textContent = hudState.hp;
+      document.getElementById("hud-armor").textContent = hudState.armor;
+      document.getElementById("hud-ammo").textContent = hudState.clip;
+      document.getElementById("hud-reserve").textContent = `/ ${hudState.reserve}`;
+      document.getElementById("hud-score-ct").textContent = hudState.scoreCt;
+      document.getElementById("hud-score-t").textContent = hudState.scoreT;
+    }
+
+    function flashHeadshot() {
+      const hs = document.getElementById("hud-hs");
+      hs.classList.add("show");
+      setTimeout(() => hs.classList.remove("show"), 1200);
+    }
+
+    function reinjectModels() {
+      if (!emModule?.FS) return;
+      const FS = emModule.FS;
+      for (const p of Object.keys(cachedModels)) {
+        const u8 = cachedModels[p];
+        if (!u8 || !u8.byteLength) continue;
+        try {
+          const dir = p.split("/").slice(0, -1).join("/");
+          if (dir) {
+            FS.mkdirTree(dir);
+            FS.mkdirTree(dir.replace("/rodir/", "/rwdir/"));
+          }
+          FS.writeFile(p, u8);
+          FS.writeFile(p.replace("/rodir/", "/rwdir/"), new Uint8Array(u8));
+        } catch (e) {}
+      }
+    }
+
+    /* ==========================================================================
+       OYUN BAŞLATICI (BOOT SEQUENCE)
+       ========================================================================== */
+    const lockInBtn = document.getElementById("lock-in-btn");
+    const loadingScreen = document.getElementById("match-loading");
+    const loadingBarFill = document.getElementById("loading-bar-fill");
+    const loadingStatus = document.getElementById("loading-status");
+    const canvas = document.getElementById("canvas");
+
+    function setLoadProgress(pct, msg) {
+      loadingBarFill.style.width = pct + "%";
+      if (msg) loadingStatus.textContent = msg;
+    }
+
+    lockInBtn.addEventListener("click", () => {
+      playerName = document.getElementById("player-nick").value.trim() || "Radiant";
+      document.getElementById("main-menu").classList.add("hidden");
+      loadingScreen.classList.remove("hidden");
+      bootGame();
+    });
+
+    async function bootGame() {
+      try {
+        setLoadProgress(5, "Taban oyun dosyaları kontrol ediliyor...");
+
+        // 1. Taban CS 1.6 Paketi (Önbellek veya CDN)
+        let zipBuf = await idbGet("valve.zip");
+        if (!zipBuf) {
+          setLoadProgress(10, "CS 1.6 temel dosyaları indiriliyor...");
+          const buffers = [];
+          for (let i = 1; i <= TOTAL_PARTS; i++) {
+            const url = `${CSWEB_CDN}valve.zip.part${i}`;
+            const res = await fetch(url, { cache: "force-cache" });
+            if (!res.ok) throw new Error(`Parça ${i} indirilemedi!`);
+            buffers.push(await res.arrayBuffer());
+            setLoadProgress(10 + (i / TOTAL_PARTS) * 45, `Taban arşiv indiriliyor (%${Math.round((i / TOTAL_PARTS) * 100)})`);
+          }
+
+          const totalSize = buffers.reduce((a, b) => a + b.byteLength, 0);
+          const combined = new Uint8Array(totalSize);
+          let offset = 0;
+          for (const buf of buffers) {
+            combined.set(new Uint8Array(buf), offset);
+            offset += buf.byteLength;
+          }
+          zipBuf = combined.buffer;
+          idbSet("valve.zip", zipBuf);
+        }
+
+        setLoadProgress(60, "Dosyalar sanal belleğe açılıyor...");
+        const baseZip = await JSZip.loadAsync(zipBuf);
+        const files = {};
+        const entries = Object.keys(baseZip.files).filter(p => !baseZip.files[p].dir);
+
+        for (let i = 0; i < entries.length; i++) {
+          const path = entries[i];
+          files["/rodir/" + path] = await baseZip.files[path].async("uint8array");
+        }
+
+        // 2. Valorant Overlay Paketi (Ascent, Ajan Modelleri, Silah Kaplamaları)
+        setLoadProgress(75, "Valorant kaplamaları ve Ascent haritası yükleniyor...");
+        let bspData = null;
+        let navData = null;
+        try {
+          const overlayRes = await fetch("cs16-game/valorant-overlay.zip", { cache: "force-cache" });
+          if (overlayRes.ok) {
+            const overlayBuf = await overlayRes.arrayBuffer();
+            const overlayZip = await JSZip.loadAsync(overlayBuf);
+            const ovEntries = Object.keys(overlayZip.files).filter(p => !overlayZip.files[p].dir);
+
+            for (const path of ovEntries) {
+              const rel = path.replace(/^cstrike\//, "");
+              const u8 = await overlayZip.files[path].async("uint8array");
+              const fullRodir = "/rodir/cstrike/" + rel;
+              const fullRwdir = "/rwdir/cstrike/" + rel;
+
+              files[fullRodir] = u8;
+              files[fullRwdir] = new Uint8Array(u8);
+
+              // Modelleri ve haritayı sakla
+              if (rel.endsWith(".mdl")) {
+                cachedModels[fullRodir] = u8;
+              }
+              if (rel.endsWith("de_ascent_v1.bsp")) {
+                bspData = u8;
+              }
+              if (rel.endsWith("de_ascent_v1.nav")) {
+                navData = u8;
+              }
+            }
+          }
+        } catch (e) {
+          console.warn("Valorant overlay:", e);
+        }
+
+        // Özel Jett Bıçağı varsa enjekte et
+        if (selectedAgent === "jett") {
+          try {
+            const jettKnifeRes = await fetch("cs16-game/hands/jett/v_knife.mdl");
+            if (jettKnifeRes.ok) {
+              const jkBuf = new Uint8Array(await jettKnifeRes.arrayBuffer());
+              files["/rodir/cstrike/models/v_knife.mdl"] = jkBuf;
+              files["/rwdir/cstrike/models/v_knife.mdl"] = new Uint8Array(jkBuf);
+              cachedModels["/rodir/cstrike/models/v_knife.mdl"] = jkBuf;
+            }
+          } catch (e) {}
+        }
+
+        // Harita ve Nav dosyalarını kesin olarak /rodir/ ve /rwdir/ dizinlerine yaz
+        if (bspData) {
+          files["/rodir/cstrike/maps/de_ascent_v1.bsp"] = bspData;
+          files["/rwdir/cstrike/maps/de_ascent_v1.bsp"] = new Uint8Array(bspData);
+        }
+        if (navData) {
+          files["/rodir/cstrike/maps/de_ascent_v1.nav"] = navData;
+          files["/rwdir/cstrike/maps/de_ascent_v1.nav"] = new Uint8Array(navData);
+        }
+
+        // 3. Extras.pk3 Yükle
+        setLoadProgress(85, "Arayüz paketleri yükleniyor...");
+        let extrasBuf = null;
+        try {
+          const exRes = await fetch("cs16-game/extras.pk3", { cache: "force-cache" });
+          if (exRes.ok) extrasBuf = await exRes.arrayBuffer();
+        } catch (e) {}
+
+        // 4. CFG & Bot Veritabanlarını Yaz
+        const enc = new TextEncoder();
+        const botDb = enc.encode(buildBotProfileDb());
+        const srvCfg = enc.encode(buildServerCfg());
+
+        files["/rodir/cstrike/BotProfile.db"] = botDb;
+        files["/rwdir/cstrike/BotProfile.db"] = new Uint8Array(botDb);
+
+        files["/rodir/cstrike/server.cfg"] = srvCfg;
+        files["/rwdir/cstrike/server.cfg"] = new Uint8Array(srvCfg);
+        files["/rodir/cstrike/listenserver.cfg"] = srvCfg;
+        files["/rwdir/cstrike/listenserver.cfg"] = new Uint8Array(srvCfg);
+        files["/rodir/cstrike/game.cfg"] = srvCfg;
+        files["/rwdir/cstrike/game.cfg"] = new Uint8Array(srvCfg);
+
+        setLoadProgress(90, "WebAssembly motoru derleniyor...");
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+
+        // Xash3D Komut Satırı Başlatma Argümanları
+        const bootArgs = [
+          "-windowed",
+          "-game", "cstrike",
+          "-width", String(width),
+          "-height", String(height),
+          "+_vgui_menus", "0",
+          "+mp_consistency", "0",
+          "+pausable", "0",
+          "+maxplayers", "12",
+          "+mp_freezetime", "3",
+          "+mp_roundtime", "1.92",
+          "+mp_c4timer", "40",
+          "+mp_startmoney", "16000",
+          "+sv_cheats", "1",
+          "+map", selectedMap,
+          "-ref", "webgl2"
+        ];
+
+        // 5. Emscripten Xash3D Motoru
+        const Module = await Xash3D({
+          noInitialRun: true,
+          arguments: bootArgs,
+          canvas: canvas,
+          INITIAL_MEMORY: 512 * 1024 * 1024,
+          ALLOW_MEMORY_GROWTH: 1,
+          dynamicLibraries: [
+            "filesystem_stdio.wasm",
+            "libref_webgl2.wasm",
+            "dlls/cs_emscripten_wasm32.wasm",
+            "cl_dlls/client_emscripten_wasm32.wasm",
+            "/rodir/filesystem_stdio.wasm"
+          ],
+          onRuntimeInitialized: function () {
+            setLoadProgress(95, "Sanal dosya sistemi kuruluyor...");
+            const FS = this.FS;
+
+            FS.mkdirTree("/rodir/cstrike/maps");
+            FS.mkdirTree("/rwdir/cstrike/maps");
+            FS.mkdirTree("/rodir/cstrike/models");
+            FS.mkdirTree("/rwdir/cstrike/models");
+            FS.mkdirTree("/rodir/valve");
+
+            if (extrasBuf) {
+              FS.writeFile("/rodir/cstrike/extras.pk3", new Uint8Array(extrasBuf));
+            }
+
+            for (const key of Object.keys(files)) {
+              const dir = key.split("/").slice(0, -1).join("/");
+              if (dir) FS.mkdirTree(dir);
+              FS.writeFile(key, files[key]);
+            }
+
+            FS.chdir("/rodir");
+            setLoadProgress(100, "Hazır! Maça giriliyor...");
+
+            setTimeout(() => {
+              loadingScreen.classList.add("hidden");
+              document.body.classList.add("is-playing");
+              isGameRunning = true;
+              initGameLifecycle();
+            }, 500);
+          },
+          locateFile: (p) => {
+            switch (p) {
+              case "xash.wasm": return `${XASH_CDN}/xash.wasm`;
+              case "filesystem_stdio.wasm":
+              case "/rodir/filesystem_stdio.wasm": return `${XASH_CDN}/filesystem_stdio.wasm`;
+              case "libref_webgl2.wasm": return `${XASH_CDN}/libref_webgl2.wasm`;
+              case "dlls/cs_emscripten_wasm32.wasm": return `${CS16_CDN}/dlls/cs_emscripten_wasm32.wasm`;
+              case "cl_dlls/client_emscripten_wasm32.wasm": return `${CS16_CDN}/cl_dlls/client_emscripten_wasm32.wasm`;
+              default: return p;
+            }
+          },
+          print: (text) => handleEngineLog(text),
+          printErr: (text) => console.error("[Xash3D Err]", text)
+        });
+
+        emModule = Module;
+        Module.callMain(bootArgs);
+
+      } catch (err) {
+        console.error("Boot Hatası:", err);
+        loadingStatus.textContent = "Hata: " + err.message;
+        loadingStatus.style.color = "#ef4444";
+      }
+    }
+
+    /* ==========================================================================
+       MAÇ YAŞAM DÖNGÜSÜ, OYUNCU KATILIMI VE BOT YÖNETİMİ
+       ========================================================================== */
+    function skipMenusAndJoin() {
+      execCmd("jointeam 2"); // CT Takımı
+      execCmd("menuselect 2");
+      execCmd("joinclass 1"); // Ajan modeli
+      execCmd("menuselect 1");
+      execCmd("cancelselect");
+    }
+
+    function initGameLifecycle() {
+      // 4. ve 7. saniyede failsafe olarak takıma katılmayı dene
+      setTimeout(() => { if (!hasJoinedTeam) tryJoinAndStart(); }, 3500);
+      setTimeout(() => { if (!hasJoinedTeam) tryJoinAndStart(); }, 6500);
+    }
+
+    function tryJoinAndStart() {
+      if (isConnected) return;
+      isConnected = true;
+
+      execCmd("sv_cheats 1");
+      execCmd("mp_consistency 0");
+      execCmd("mp_autoteambalance 0");
+      execCmd("mp_limitteams 0");
+      execCmd('name "' + playerName + '"');
+      execCmd("sensitivity " + csSens.toFixed(4));
+      execCmd("hud_draw 0");
+
+      skipMenusAndJoin();
+      reinjectModels();
+
+      // Botları ekle (1.5 saniye sonra)
+      setTimeout(() => {
+        execCmd("mp_consistency 0");
+        execCmd("cancelselect");
+        spawnMatchBots();
+      }, 1500);
+
+      // Tüm botlar bağlandıktan sonra maçı temiz başlat
+      setTimeout(() => {
+        execCmd("sv_restart 1");
+        reinjectModels();
+        giveKitLoadout(selectedKit);
+        canvas.requestPointerLock?.();
+      }, 7000);
+    }
+
+    function spawnMatchBots() {
+      if (botsSpawned || selectedMode === "solo") return;
+      botsSpawned = true;
+
+      execCmd("mp_consistency 0");
+      execCmd("bot_difficulty " + selectedDiff);
+      execCmd("bot_chatter off");
+      execCmd("bot_defer_to_human 0");
+      execCmd("bot_join_team any");
+      execCmd("bot_auto_vacate 0");
+      execCmd("bot_join_after_player 0");
+      execCmd("bot_quota_mode normal");
+      execCmd("bot_walk 0");
+      execCmd("bot_stop 0");
+      execCmd("bot_deathmatch 0");
+      execCmd("mp_startmoney 16000");
+      execCmd("bot_quota 0");
+
+      const botCountT = selectedMode === "5v5" ? 5 : 3;
+      const botCountCt = selectedMode === "5v5" ? 4 : 2;
+
+      // Terörist Botlar (5 adet)
+      for (let i = 0; i < botCountT; i++) {
+        setTimeout(() => {
+          execCmd("bot_add_t");
+        }, 300 + i * 500);
+      }
+
+      // Anti-Terörist Botlar (4 adet, 5. oyuncu insan)
+      for (let i = 0; i < botCountCt; i++) {
+        setTimeout(() => {
+          execCmd("bot_add_ct");
+        }, 300 + (botCountT + i) * 500);
+      }
+    }
+
+    function handleEngineLog(text) {
+      // 1. Sunucu hazır olduğunda katıl
+      if (!isConnected && /Custom resource propagation complete|Server spawned|joined the game|is joining the/i.test(text)) {
+        setTimeout(tryJoinAndStart, 300);
+      }
+
+      // 2. Takım menüsü açılırsa atla
+      if (/Select a team|Terrorist Force|chooseteam|Scoring will not start/i.test(text)) {
+        setTimeout(skipMenusAndJoin, 60);
+      }
+
+      // 3. Oyuncu CT olarak spawn oldu
+      if (/joining the Counter-Terrorist|joined the CT|Counter-Terrorist force/i.test(text)) {
+        hasJoinedTeam = true;
+        hudState.alive = true;
+        setTimeout(() => {
+          giveKitLoadout(selectedKit);
+          reinjectModels();
+        }, 300);
+      }
+
+      // 4. Raunt başlangıcı
+      if (/World triggered "Round_Start"/i.test(text)) {
+        hudState.alive = true;
+        setTimeout(() => {
+          giveKitLoadout(selectedKit);
+          reinjectModels();
+        }, 400);
+      }
+
+      // 5. Headshot
+      if (/killed .* with .* headshot|headshot/i.test(text)) {
+        flashHeadshot();
+      }
+    }
+
+    /* ==========================================================================
+       KİT MENÜSÜ (B TUŞU) & DURAKLATMA (ESC) YÖNETİMİ
+       ========================================================================== */
+    const kitPanel = document.getElementById("kit-panel");
+    const pauseMenu = document.getElementById("pause-menu");
+
+    window.addEventListener("keydown", (e) => {
+      if (!isGameRunning) return;
+
+      // B Tuşu: Loadout Satın Alma Menüsü
+      if (e.key === "b" || e.key === "B") {
+        if (kitPanel.classList.contains("show")) {
+          kitPanel.classList.remove("show");
+          canvas.requestPointerLock?.();
+        } else {
+          kitPanel.classList.add("show");
+          document.exitPointerLock?.();
+        }
+      }
+
+      // 1, 2, 3 tuşları kit menüsü açıkken hızlı seçim
+      if (kitPanel.classList.contains("show")) {
+        if (e.key === "1") { giveKitLoadout("ak"); kitPanel.classList.remove("show"); canvas.requestPointerLock?.(); }
+        if (e.key === "2") { giveKitLoadout("m4"); kitPanel.classList.remove("show"); canvas.requestPointerLock?.(); }
+        if (e.key === "3") { giveKitLoadout("awp"); kitPanel.classList.remove("show"); canvas.requestPointerLock?.(); }
+      }
+
+      // Oyun içi hızlı silah seçimi
+      if (!kitPanel.classList.contains("show") && !pauseMenu.classList.contains("show")) {
+        if (e.key === "1") {
+          execCmd("use " + (selectedKit === "awp" ? "weapon_awp" : selectedKit === "m4" ? "weapon_m4a1" : "weapon_ak47"));
+        } else if (e.key === "2") {
+          execCmd("use weapon_usp");
+        } else if (e.key === "3") {
+          execCmd("use weapon_knife");
+        }
+      }
+
+      // R Tuşu Mermi Doldurma
+      if (e.key === "r" || e.key === "R") {
+        if (hudState.clip < 30 && hudState.reserve > 0) {
+          hudState.clip = 30;
+          updateHud();
+        }
+      }
+    });
+
+    document.querySelectorAll(".kit-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        giveKitLoadout(btn.getAttribute("data-kit"));
+        kitPanel.classList.remove("show");
+        canvas.requestPointerLock?.();
+      });
+    });
+
+    // Pointer Lock Değişimi: Fare serbest kaldığında duraklatma menüsünü aç
+    document.addEventListener("pointerlockchange", () => {
+      if (document.pointerLockElement !== canvas && isGameRunning) {
+        if (!kitPanel.classList.contains("show")) {
+          pauseMenu.classList.add("show");
+          document.getElementById("pause-sens").value = valSens;
+        }
+      }
+    });
+
+    document.getElementById("btn-resume").addEventListener("click", () => {
+      pauseMenu.classList.remove("show");
+      canvas.requestPointerLock?.();
+    });
+
+    document.getElementById("pause-sens").addEventListener("input", (e) => {
+      valSens = parseFloat(e.target.value) || 0.35;
+      csSens = calculateCsSens(valSens);
+      execCmd("sensitivity " + csSens.toFixed(4));
+    });
+
+    document.getElementById("btn-restart-round").addEventListener("click", () => {
+      execCmd("sv_restart 1");
+      reinjectModels();
+      pauseMenu.classList.remove("show");
+      canvas.requestPointerLock?.();
+    });
+
+    document.getElementById("btn-to-main-menu").addEventListener("click", () => {
+      location.reload();
+    });
+
+    canvas.addEventListener("click", () => {
+      if (isGameRunning && !kitPanel.classList.contains("show") && !pauseMenu.classList.contains("show")) {
+        canvas.requestPointerLock?.();
+      }
+    });
+  </script>
+</body>
+</html>
